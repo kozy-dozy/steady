@@ -1,0 +1,183 @@
+/* Fonts */
+
+/* ── Dialog (react-modal) ── */
+.dialog {
+    outline: none;
+    margin: 0 auto;
+}
+.dialog-content {
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: var(--sc-shadow-lg, 0 8px 24px rgba(0,0,0,0.2));
+    margin: 64px auto;
+    position: relative;
+    background: var(--sc-bg-card, #fff);
+    color: var(--sc-text-primary, #1a1f36);
+}
+.dialog-overlay {
+    transition: opacity 0.15s ease-in-out;
+    inset: 0;
+    position: fixed;
+    z-index: 200;
+    background: var(--sc-overlay, rgba(0,0,0,0.5));
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+.dialog-overlay-after-open { opacity: 1; }
+.dialog-overlay-before-close { opacity: 0; }
+.dialog-portal { position: relative; z-index: 200; }
+
+/* ── Close button ── */
+.close-btn {
+    outline: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sc-text-secondary, #6b7280);
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+.close-btn:hover { color: var(--sc-text-primary, #1a1f36); }
+.close-btn.absolute { position: absolute; z-index: 10; }
+
+/* ── Drawer (react-modal) ── */
+.drawer-portal { position: relative; z-index: 100; }
+.drawer-content {
+    background: var(--sc-bg-card, #fff);
+    box-shadow: var(--sc-shadow-lg, 0 8px 24px rgba(0,0,0,0.2));
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+}
+.drawer-content.vertical { height: 100%; top: 0; bottom: 0; }
+.drawer-content.horizontal { width: 100%; left: 0; right: 0; }
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--sc-border, #e5e7eb);
+    color: var(--sc-text-primary, #1a1f36);
+}
+.drawer-body {
+    padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    color: var(--sc-text-primary, #1a1f36);
+}
+.drawer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid var(--sc-border, #e5e7eb);
+}
+.drawer-open.drawer-lock-scroll { overflow: hidden; }
+.drawer-overlay {
+    transition: opacity 0.3s ease-in-out;
+    background: var(--sc-overlay, rgba(0,0,0,0.5));
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+}
+.drawer-overlay-after-open { opacity: 1; }
+.drawer-overlay-before-close { opacity: 0; }
+.ReactModal__Overlay { opacity: 0; }
+.ReactModal__Overlay--after-open { opacity: 1; }
+
+/* ── Dropdown ── */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+.dropdown-toggle-default {
+    cursor: pointer;
+    padding: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.dropdown-toggle-disabled { opacity: 0.6; cursor: not-allowed; }
+.dropdown-menu {
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: var(--sc-shadow-lg, 0 8px 24px rgba(0,0,0,0.15));
+    background: var(--sc-bg-card, #fff);
+    border: 1px solid var(--sc-border, #e5e7eb);
+    outline: none;
+    padding: 6px;
+    position: absolute;
+    z-index: 100;
+    list-style: none;
+}
+.dropdown-menu.top-start { left: 0; bottom: 100%; transform-origin: bottom; }
+.dropdown-menu.top-end { right: 0; bottom: 100%; transform-origin: bottom; }
+.dropdown-menu.top-center { left: 50%; bottom: 100%; transform-origin: bottom; }
+.dropdown-menu.bottom-start { left: 0; top: 100%; transform-origin: top; }
+.dropdown-menu.bottom-end { right: 0; top: 100%; transform-origin: top; }
+.dropdown-menu.bottom-center { left: 50%; top: 100%; transform-origin: top; }
+.dropdown-menu.middle-start-top { left: 100%; top: 0; }
+.dropdown-menu.middle-end-top { right: 100%; top: 0; }
+.dropdown-submenu { left: 100%; top: 0; transform-origin: top; }
+.dropdown-submenu-item { justify-content: space-between; }
+
+/* ── MenuItem (used in Dropdown) ── */
+.menu-item {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    white-space: nowrap;
+    gap: 8px;
+    height: 35px;
+    transition: background 0.15s, color 0.15s;
+    list-style: none;
+    font-size: 14px;
+}
+.menu-item-light {
+    color: var(--sc-text-secondary, #6b7280);
+}
+.menu-item-light.menu-item-hoverable:hover {
+    color: var(--sc-text-primary, #1a1f36);
+    background: var(--sc-bg-hover, #f3f4f6);
+}
+.menu-item-dark {
+    color: var(--sc-text-secondary, #94a3b8);
+}
+.menu-item-dark.menu-item-hoverable:hover {
+    color: var(--sc-text-primary, #f1f5f9);
+    background: rgba(255,255,255,0.08);
+}
+.menu-item-disabled { cursor: not-allowed; opacity: 0.6; }
+.menu-item-header { font-size: 13px; padding: 4px 0; }
+.menu-item-divider {
+    border-bottom: 1px solid var(--sc-border, #e5e7eb);
+    margin: 4px 0;
+}
+
+/* ── NavToggle burger icon ── */
+.nav-toggle { cursor: pointer; }
+
+/* ── Toast / Notification ── */
+.toast {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+}
+.toast-wrapper {
+    pointer-events: all;
+    margin-bottom: 8px;
+}

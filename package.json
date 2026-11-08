@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "workspaces": [
+    "react",
+    "express"
+  ],
+  "scripts": {
+    "dev:react": "yarn workspace steady-react dev",
+    "dev:express": "yarn workspace steady-express dev",
+    "lint": "yarn workspace steady-react lint && yarn workspace steady-express lint",
+    "lint:fix": "yarn workspace steady-react lint:fix && yarn workspace steady-express lint:fix"
+  },
+  "resolutions": {
+    "@kozy-dozy/ui": "^2.0.0"
+  }
+}
