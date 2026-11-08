@@ -20,6 +20,7 @@ import storage from 'redux-persist/lib/storage'
 import { PERSIST_STORE_NAME } from '@/constants/app.constant'
 
 import rootReducer, { RootState, AsyncReducers } from './rootReducer'
+import { registerStore } from './storeRef'
 // import RtkQueryService from '@/services/RtkQueryService'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -56,6 +57,7 @@ const store: CustomStore = configureStore({
 })
 
 store.asyncReducers = {}
+registerStore(store)
 
 export const persistor = persistStore(store)
 

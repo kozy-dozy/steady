@@ -1,6 +1,8 @@
+import { setUser, signOutSuccess } from '@kozy-dozy/foundation'
+
 import { INTEGRATIONS_CONFIG } from '@/config/integrations.config'
 import { PERSIST_STORE_NAME } from '@/constants/app.constant'
-import store, { signOutSuccess, setUser } from '@/store'
+import { getStore } from '@/store/storeRef'
 
 type FetchArgs<U> = {
     url: string
@@ -73,8 +75,8 @@ async function refreshToken(): Promise<void> {
 
 function hardSignOut() {
     // Clears redux auth + user
-    store.dispatch(signOutSuccess())
-    store.dispatch(
+    getStore().dispatch(signOutSuccess())
+    getStore().dispatch(
         setUser({
             id: '',
             avatar: '',
@@ -115,7 +117,7 @@ async function request<T, U>(args: FetchArgs<U>, retry = false): Promise<T> {
 
     // If access token expired/invalid -> attempt refresh once, retry request
     if (err.status === 401 && !retry && args.url !== '/auth/refresh') {
-        const state = store.getState()
+        const state = getStore().getState()
         const wasSignedIn = !!state.auth?.session?.signedIn
 
         // If user is NOT signed in, 401 is expected (e.g. /members/me on load)
@@ -133,7 +135,7 @@ async function request<T, U>(args: FetchArgs<U>, retry = false): Promise<T> {
 
     // ✅ Only hard sign out on 401 if we thought we were signed in
     if (err.status === 401) {
-        const state = store.getState()
+        const state = getStore().getState()
         const wasSignedIn = !!state.auth?.session?.signedIn
         if (wasSignedIn) hardSignOut()
     }
