@@ -27,7 +27,7 @@ export default function OwnerGuard() {
     if (!authority.includes(ADMIN)) {
         return (
             <Box>
-                <h1>This account can't open Steady.</h1>
+                <h1>This account can&apos;t open Steady.</h1>
                 <p>Steady is a private app. Sign in with the owner account.</p>
                 <Button variant="solid" onClick={signOut}>
                     Sign out

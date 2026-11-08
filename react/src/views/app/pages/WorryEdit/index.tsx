@@ -12,8 +12,8 @@ import { apiDeleteWorry, apiGetWorry, apiUpdateWorry } from '@/services/shared/W
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
 import CategoryIcon from '../../components/CategoryIcon'
-import WorryForm from '../../components/WorryForm'
 import { Card, Chip, ErrorText, Page, Row, SectionTitle, Title } from '../../components/ui'
+import WorryForm from '../../components/WorryForm'
 import { errorMessage, longDate } from '../../utils/worry'
 import { toFormValues, toInput, type WorryFormValues } from '../../utils/worryForm'
 
@@ -151,7 +151,7 @@ export default function WorryEdit() {
     if (notFound) {
         return (
             <Page>
-                <ErrorState>That entry doesn't exist any more.</ErrorState>
+                <ErrorState>That entry doesn&apos;t exist any more.</ErrorState>
                 <Link to="/">Back to worries</Link>
             </Page>
         )
@@ -189,13 +189,13 @@ export default function WorryEdit() {
                         categories={pickable}
                         initialValues={initialValues}
                         submitLabel="Save changes"
-                        onSubmit={save}
-                        onCancel={() => navigate('/')}
                         leftActions={
                             <Button type="button" variant="plain" onClick={() => setConfirmDelete(true)}>
                                 Delete
                             </Button>
                         }
+                        onCancel={() => navigate('/')}
+                        onSubmit={save}
                     />
                 </Main>
 
@@ -235,7 +235,7 @@ export default function WorryEdit() {
             <Dialog isOpen={confirmDelete} width={420} onClose={() => setConfirmDelete(false)} onRequestClose={() => setConfirmDelete(false)}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <SectionTitle>Delete this entry?</SectionTitle>
-                    <p>This can't be undone. If it just isn't a worry any more, you can mark it Resolved instead.</p>
+                    <p>This can&apos;t be undone. If it just isn&apos;t a worry any more, you can mark it Resolved instead.</p>
                     <Row style={{ justifyContent: 'flex-end' }}>
                         <Button onClick={() => setConfirmDelete(false)}>Keep it</Button>
                         <Button variant="solid" onClick={remove}>

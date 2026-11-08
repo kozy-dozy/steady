@@ -132,7 +132,7 @@ function IntensityPicker() {
                 <FieldLabel>How heavy is it?</FieldLabel>
                 <Big>{value} / 10</Big>
             </span>
-            <Range min={1} max={10} step={1} value={value} onChange={(e) => set(Number(e.target.value))} aria-valuetext={`${value} of 10`} />
+            <Range aria-valuetext={`${value} of 10`} max={10} min={1} step={1} value={value} onChange={(e) => set(Number(e.target.value))} />
             <ScaleEnds>
                 <span>A little</span>
                 <span>A lot</span>
@@ -164,9 +164,9 @@ function TextBox({ name, label, placeholder, multiline, as: Wrap = Field }: { na
         <Wrap>
             <FieldLabel>{label}</FieldLabel>
             {multiline ? (
-                <TextArea name={name} value={values[name]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} rows={3} />
+                <TextArea name={name} placeholder={placeholder} rows={3} value={values[name]} onBlur={handleBlur} onChange={handleChange} />
             ) : (
-                <TextInput name={name} value={values[name]} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} />
+                <TextInput name={name} placeholder={placeholder} value={values[name]} onBlur={handleBlur} onChange={handleChange} />
             )}
             {error && <ErrorText>{error}</ErrorText>}
         </Wrap>
@@ -190,7 +190,7 @@ export default function WorryForm({ initialValues, categories, variant, submitLa
     const quick = variant === 'quick'
 
     return (
-        <Formik<WorryFormValues> initialValues={initialValues} validationSchema={worrySchema} onSubmit={onSubmit} enableReinitialize>
+        <Formik<WorryFormValues> enableReinitialize initialValues={initialValues} validationSchema={worrySchema} onSubmit={onSubmit}>
             {({ isSubmitting }) => (
                 <Form noValidate>
                     <Stack>
@@ -202,10 +202,10 @@ export default function WorryForm({ initialValues, categories, variant, submitLa
                         ) : (
                             <>
                                 <TwoCol>
-                                    <CategoryPicker categories={categories} asSelect />
+                                    <CategoryPicker asSelect categories={categories} />
                                     <TypePicker />
                                 </TwoCol>
-                                <TextBox name="description" label="Description" multiline />
+                                <TextBox multiline label="Description" name="description" />
                             </>
                         )}
                         {quick && <TypePicker />}
@@ -223,14 +223,14 @@ export default function WorryForm({ initialValues, categories, variant, submitLa
                             <Details>
                                 <ControlPicker />
                                 <TextBox name="nextStep" label="Next small step" placeholder="One concrete action" />
-                                <TextBox name="reframe" label="A more balanced thought" placeholder="What would I tell a friend?" multiline as={Reframe} />
-                                <TextBox name="notes" label="Notes" multiline />
+                                <TextBox multiline as={Reframe} label="A more balanced thought" name="reframe" placeholder="What would I tell a friend?" />
+                                <TextBox multiline label="Notes" name="notes" />
                                 <TextBox name="tagsText" label="Tags" placeholder="sleep, budget" />
                             </Details>
                         )}
 
                         {quick ? (
-                            <Button type="submit" variant="solid" size="lg" loading={isSubmitting} block>
+                            <Button block loading={isSubmitting} size="lg" type="submit" variant="solid">
                                 {submitLabel}
                             </Button>
                         ) : (

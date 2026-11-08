@@ -9,8 +9,8 @@ import { apiListCategories } from '@/services/shared/CategoryService'
 import { apiCreateWorry } from '@/services/shared/WorryService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
-import WorryForm from '../../components/WorryForm'
 import { Card, ErrorText, PageHead, Title } from '../../components/ui'
+import WorryForm from '../../components/WorryForm'
 import { errorMessage, lastCategory, rememberCategory } from '../../utils/worry'
 import { emptyWorry, toInput, type WorryFormValues } from '../../utils/worryForm'
 
@@ -95,7 +95,7 @@ export default function WorryNew() {
                         </Badge>
                         <Title as="h2">{CONTENT_CONFIG.quickAdd.savedTitle}</Title>
                         <p>{CONTENT_CONFIG.quickAdd.savedBody}</p>
-                        <Button variant="solid" block onClick={() => navigate('/')}>
+                        <Button block variant="solid" onClick={() => navigate('/')}>
                             Back to my list
                         </Button>
                         <Button
@@ -119,7 +119,7 @@ export default function WorryNew() {
                 <Title>{CONTENT_CONFIG.quickAdd.title}</Title>
                 <Link to="/">Cancel</Link>
             </PageHead>
-            {loadError && <ErrorState>Couldn't load your categories. Refresh to try again.</ErrorState>}
+            {loadError && <ErrorState>Couldn&apos;t load your categories. Refresh to try again.</ErrorState>}
             {!loadError && !categories && <LoadingState />}
             {categories && (
                 <Card>

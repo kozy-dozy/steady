@@ -202,7 +202,7 @@ export default function Categories() {
                             onChange={(e) => setNewName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), add())}
                         />
-                        <Button variant="solid" onClick={add} loading={busy} disabled={!newName.trim()}>
+                        <Button disabled={!newName.trim()} loading={busy} variant="solid" onClick={add}>
                             Add
                         </Button>
                     </Row>
@@ -210,7 +210,7 @@ export default function Categories() {
             </Card>
 
             {error && <ErrorText role="alert">{error}</ErrorText>}
-            {loadError && <ErrorState>Couldn't load categories. Refresh to try again.</ErrorState>}
+            {loadError && <ErrorState>Couldn&apos;t load categories. Refresh to try again.</ErrorState>}
             {!loadError && !categories && <LoadingState />}
 
             {categories && (
@@ -281,7 +281,7 @@ export default function Categories() {
                         </div>
                         <Row style={{ justifyContent: 'flex-end' }}>
                             <Button onClick={() => setDraft(null)}>Cancel</Button>
-                            <Button variant="solid" onClick={saveDraft} disabled={!draft.name.trim()}>
+                            <Button disabled={!draft.name.trim()} variant="solid" onClick={saveDraft}>
                                 Save
                             </Button>
                         </Row>

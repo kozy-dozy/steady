@@ -10,8 +10,8 @@ import { apiListCategories } from '@/services/shared/CategoryService'
 import { apiGetWorrySummary, apiListWorries } from '@/services/shared/WorryService'
 import { EmptyState, ErrorState, LoadingState } from '@/views/ecom/components/States'
 
-import WorryCard from '../../components/WorryCard'
 import { Card, Eyebrow, NativeSelect, PageHead, Page, Row, Segment, Segmented, Title } from '../../components/ui'
+import WorryCard from '../../components/WorryCard'
 import { todayLabel } from '../../utils/worry'
 
 import type { CategoryDto, WorryControl, WorryDto, WorrySort, WorrySummaryDto, WorryType } from '@shared/dtos'
@@ -200,7 +200,7 @@ export default function Worries() {
                 )}
             </Filters>
 
-            {error && <ErrorState>Couldn't load your list. Check your connection and refresh.</ErrorState>}
+            {error && <ErrorState>Couldn&apos;t load your list. Check your connection and refresh.</ErrorState>}
             {!error && loading && worries.length === 0 && <LoadingState />}
             {!error && !loading && worries.length === 0 && (
                 <EmptyState>{filtered ? CONTENT_CONFIG.list.emptyFiltered : CONTENT_CONFIG.list.empty}</EmptyState>
@@ -213,7 +213,7 @@ export default function Worries() {
             </List>
 
             {worries.length < total && (
-                <Button onClick={() => load(page + 1)} loading={loading}>
+                <Button loading={loading} onClick={() => load(page + 1)}>
                     Show more
                 </Button>
             )}
