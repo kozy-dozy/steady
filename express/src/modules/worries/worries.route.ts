@@ -1,6 +1,5 @@
 import express from 'express'
 
-import { requireAdmin } from '../../middleware/requireAdmin'
 import { requireAuth } from '../../middleware/requireAuth'
 import asyncHandler from '../../utils/asyncHandler'
 
@@ -8,8 +7,8 @@ import { createWorry, deleteWorry, getWorry, getWorrySummary, listWorries, updat
 
 const router = express.Router()
 
-// Owner-only app: every route needs a signed-in owner account. Data is scoped to req.userId.
-router.use(requireAuth, requireAdmin)
+// Any signed-in member; every query is scoped to req.userId.
+router.use(requireAuth)
 
 router.get('/', asyncHandler(listWorries))
 // Declared before `/:id` so "summary" is never read as an id

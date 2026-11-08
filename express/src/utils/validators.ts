@@ -62,8 +62,8 @@ export const signUpSchema = Joi.object({
     password: passwordSchema,
     firstName: Joi.string().trim().max(100).required(),
     lastName: Joi.string().trim().max(100).required(),
-    role: Joi.string().valid('family', 'couple', 'solo', 'group').required(),
-    recaptchaToken: Joi.string().required(),
+    // Empty when reCAPTCHA isn't configured (RECAPTCHA_SECRET_KEY unset).
+    recaptchaToken: Joi.string().allow('').default(''),
 }).unknown(false) // Reject unknown fields
 
 export const signInSchema = Joi.object({

@@ -3,26 +3,27 @@ import ProtectedRoute from '@kozy-dozy/routing/ProtectedRoute'
 import PublicRoute from '@kozy-dozy/routing/PublicRoute'
 import PageTransition from '@kozy-dozy/shared/PageTransition'
 import { Suspense, lazy } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 
 import { useInitializeReduxState } from '@/store/domainHooks'
 import AppShell from '@/views/app/components/AppShell'
-import OwnerGuard from '@/views/app/components/OwnerGuard'
 import AuthLayout from '@/views/ecom/components/AuthLayout'
 
 import GoogleAnalytics from './views/ecom/components/GoogleAnalytics'
 
 import type { ReactNode } from 'react'
 
-// App pages (owner-only: everything sits behind sign-in)
+// App pages (everything sits behind sign-in; each member sees only their own data)
 const Worries = lazy(() => import('@/views/app/pages/Worries'))
 const WorryNew = lazy(() => import('@/views/app/pages/WorryNew'))
 const WorryEdit = lazy(() => import('@/views/app/pages/WorryEdit'))
 const Categories = lazy(() => import('@/views/app/pages/Categories'))
 const Account = lazy(() => import('@/views/app/pages/Account'))
 
-// Auth pages (no public sign-up: the account comes from `create:admin`)
+// Auth pages
 const SignIn = lazy(() => import('@/views/ecom/auth/SignIn'))
+const SignUp = lazy(() => import('@/views/ecom/auth/SignUp'))
+const EmailConfirmed = lazy(() => import('@/views/ecom/auth/EmailConfirmed'))
 const ForgotPassword = lazy(() => import('@/views/ecom/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('@/views/ecom/auth/ResetPassword'))
 
@@ -34,6 +35,8 @@ function AppRoutes() {
             <Routes>
                 <Route element={<AuthLayout />}>
                     <Route path="/sign-in" element={publicOnly(<SignIn />)} />
+                    <Route path="/sign-up" element={publicOnly(<SignUp />)} />
+                    <Route path="/email-confirmed" element={publicOnly(<EmailConfirmed />)} />
                     <Route path="/forgot-password" element={publicOnly(<ForgotPassword />)} />
                     <Route path="/reset-password" element={publicOnly(<ResetPassword />)} />
                 </Route>
@@ -41,7 +44,7 @@ function AppRoutes() {
                 <Route
                     element={
                         <ProtectedRoute>
-                            <OwnerGuard />
+                            <Outlet />
                         </ProtectedRoute>
                     }
                 >

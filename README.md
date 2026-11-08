@@ -1,6 +1,6 @@
 # Steady (steady)
 
-A private, owner-only tracker for anxieties and depression: log a worry fast, sort it by category,
+A private tracker for anxieties and depression: log a worry fast, sort it by category,
 track its status, and write a next step and a reframe.
 
 - `steady-express`: `dev`, `build`, `start`, `lint`, `create:admin`, `seed`

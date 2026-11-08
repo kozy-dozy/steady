@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import {
     apiSignIn,
+    apiSignUp,
     apiSignOut,
     apiResendVerificationEmail,
     apiMe,
@@ -26,6 +27,7 @@ import useQuery from './useQuery'
 import type {
     ResendVerificationEmail,
     SignInCredential,
+    SignUpCredential,
 } from '@/@types/auth'
 
 type Status = 'success' | 'failed'
@@ -167,6 +169,17 @@ function useAuth() {
         }
     }
 
+    const signUp = async (values: SignUpCredential): Promise<AuthResult> => {
+        try {
+            const data = (await apiSignUp(values)) as unknown as AuthResponse
+            trackEvent('sign_up_success')
+            return { status: 'success', message: data?.message || 'Account created.' }
+        } catch (err) {
+            trackEvent('sign_up_failed')
+            return { status: 'failed', message: getErrorMessage(err) }
+        }
+    }
+
     const resendVerificationEmail = async (
         values: ResendVerificationEmail,
     ): Promise<AuthResult> => {
@@ -227,6 +240,7 @@ function useAuth() {
         user,
         refreshSession,
         signIn,
+        signUp,
         signOut,
         resendVerificationEmail,
     }

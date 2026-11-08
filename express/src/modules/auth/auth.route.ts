@@ -5,6 +5,7 @@ import asyncHandler from '../../../src/utils/asyncHandler'
 import {
     confirmEmail,
     signIn,
+    signUp,
     signOut,
     refreshTokenHandler,
     resendVerification,
@@ -15,7 +16,7 @@ import {
 
 const router = express.Router()
 
-// Admin-only app: no public sign-up. The first admin comes from `yarn workspace steady-express create:admin`.
+router.post('/signup', asyncHandler(signUp))
 router.post('/signin', asyncHandler(signIn))
 router.post('/signout', asyncHandler(signOut))
 router.get('/confirm-email', asyncHandler(confirmEmail))
