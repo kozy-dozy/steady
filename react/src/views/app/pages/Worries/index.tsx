@@ -1,7 +1,7 @@
 import Button from '@kozy-dozy/ui/Button'
 import { WORRY_CONTROL_LABELS, WORRY_CONTROLS, WORRY_TYPE_LABELS, WORRY_TYPES } from '@shared/dtos'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { LuPlus } from 'react-icons/lu'
+import { LuCopy, LuPlus } from 'react-icons/lu'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 
@@ -43,6 +43,10 @@ const Stat = styled(Card)`
         font-size: ${({ theme }) => theme.fontSize['2xl']};
         font-weight: 600;
     }
+`
+
+const HeadActions = styled(Row)`
+    gap: ${({ theme }) => theme.spacing.sm};
 `
 
 const AddLink = styled(Link)`
@@ -137,11 +141,16 @@ export default function Worries() {
                     <Eyebrow>{todayLabel()}</Eyebrow>
                     <Title>{CONTENT_CONFIG.list.title}</Title>
                 </div>
-                <AddLink to="/worries/new">
-                    <Button variant="solid" icon={<LuPlus aria-hidden="true" />}>
-                        Add a worry
-                    </Button>
-                </AddLink>
+                <HeadActions>
+                    <Link to="/worries/duplicates">
+                        <Button icon={<LuCopy aria-hidden="true" />}>Find duplicates</Button>
+                    </Link>
+                    <AddLink to="/worries/new">
+                        <Button icon={<LuPlus aria-hidden="true" />} variant="solid">
+                            Add a worry
+                        </Button>
+                    </AddLink>
+                </HeadActions>
             </PageHead>
 
             {summary && (

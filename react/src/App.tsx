@@ -17,6 +17,7 @@ import type { ReactNode } from 'react'
 const Worries = lazy(() => import('@/views/app/pages/Worries'))
 const WorryNew = lazy(() => import('@/views/app/pages/WorryNew'))
 const WorryEdit = lazy(() => import('@/views/app/pages/WorryEdit'))
+const Duplicates = lazy(() => import('@/views/app/pages/Duplicates'))
 const Categories = lazy(() => import('@/views/app/pages/Categories'))
 const Account = lazy(() => import('@/views/app/pages/Account'))
 
@@ -51,6 +52,7 @@ function AppRoutes() {
                     <Route element={<AppShell />}>
                         <Route path="/" element={<Worries />} />
                         <Route path="/worries/new" element={<WorryNew />} />
+                        <Route path="/worries/duplicates" element={<Duplicates />} />
                         <Route path="/worries/:id" element={<WorryEdit />} />
                         <Route path="/categories" element={<Categories />} />
                         <Route path="/account" element={<Account />} />

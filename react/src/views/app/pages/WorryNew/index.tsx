@@ -1,20 +1,21 @@
 import Button from '@kozy-dozy/ui/Button'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { LuCheck } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { CONTENT_CONFIG } from '@/config/content.config'
 import { apiListCategories } from '@/services/shared/CategoryService'
-import { apiCreateWorry } from '@/services/shared/WorryService'
+import { apiCreateWorry, apiFindSimilarWorries } from '@/services/shared/WorryService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
-import { Card, ErrorText, PageHead, Title } from '../../components/ui'
+import { Card, ErrorText, PageHead, Row, SectionTitle, Title } from '../../components/ui'
+import WorryCard from '../../components/WorryCard'
 import WorryForm from '../../components/WorryForm'
 import { errorMessage, lastCategory, rememberCategory } from '../../utils/worry'
 import { emptyWorry, toInput, type WorryFormValues } from '../../utils/worryForm'
 
-import type { CategoryDto } from '@shared/dtos'
+import type { CategoryDto, WorryMatchDto } from '@shared/dtos'
 
 const Wrap = styled.div`
     width: 100%;
@@ -50,6 +51,17 @@ const Badge = styled.div`
     color: ${({ theme }) => theme.colors.text.primary};
 `
 
+const Matches = styled(Card)`
+    border-color: ${({ theme }) => theme.colors.primary};
+    gap: ${({ theme }) => theme.spacing.md};
+`
+
+const MatchList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: ${({ theme }) => theme.spacing.sm};
+`
+
 export default function WorryNew() {
     const navigate = useNavigate()
     const [categories, setCategories] = useState<CategoryDto[] | null>(null)
@@ -57,12 +69,23 @@ export default function WorryNew() {
     const [saveError, setSaveError] = useState('')
     const [saved, setSaved] = useState(false)
     const [formKey, setFormKey] = useState(0)
+    // Possible repeats found when Save was pressed, and the values waiting on "Save anyway"
+    const [matches, setMatches] = useState<WorryMatchDto[]>([])
+    const [pending, setPending] = useState<WorryFormValues | null>(null)
+    const [saving, setSaving] = useState(false)
+    const matchesRef = useRef<HTMLDivElement>(null)
+    const byId = useMemo(() => new Map((categories ?? []).map((c) => [c.id, c])), [categories])
 
     useEffect(() => {
         apiListCategories()
             .then((r) => setCategories(r.categories))
             .catch(() => setLoadError(true))
     }, [])
+
+    // The Save button is at the bottom of the form; bring the matches into view under it
+    useEffect(() => {
+        if (matches.length) matchesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, [matches])
 
     // Memoised: Formik re-initialises whenever this object changes identity
     const initial = useMemo(() => {
@@ -74,15 +97,41 @@ export default function WorryNew() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categories, formKey])
 
-    const save = async (values: WorryFormValues) => {
+    const create = async (values: WorryFormValues) => {
         setSaveError('')
+        setSaving(true)
         try {
             await apiCreateWorry(toInput(values))
             rememberCategory(values.categoryId)
+            setMatches([])
+            setPending(null)
             setSaved(true)
         } catch (err) {
             setSaveError(errorMessage(err, 'Could not save. Please try again.'))
+        } finally {
+            setSaving(false)
         }
+    }
+
+    // Look for a similar worry first. If the check fails, save anyway: never block a quick add.
+    const save = async (values: WorryFormValues) => {
+        setSaveError('')
+        try {
+            const res = await apiFindSimilarWorries({ description: values.description.trim() })
+            if (res.matches.length) {
+                setMatches(res.matches)
+                setPending(values)
+                return
+            }
+        } catch {
+            // fall through to save
+        }
+        await create(values)
+    }
+
+    const dismissMatches = () => {
+        setMatches([])
+        setPending(null)
     }
 
     if (saved) {
@@ -126,6 +175,23 @@ export default function WorryNew() {
                     {saveError && <ErrorText role="alert">{saveError}</ErrorText>}
                     <WorryForm key={formKey} variant="quick" categories={categories} initialValues={initial} submitLabel="Save" onSubmit={save} />
                 </Card>
+            )}
+            {matches.length > 0 && pending && (
+                <Matches ref={matchesRef} role="alert">
+                    <SectionTitle>{matches.length === 1 ? 'This might already be on your list' : 'These might already be on your list'}</SectionTitle>
+                    <p>Tap one to open it, or save this as a new entry.</p>
+                    <MatchList>
+                        {matches.map((m) => (
+                            <WorryCard key={m.worry.id} category={byId.get(m.worry.categoryId)} worry={m.worry} />
+                        ))}
+                    </MatchList>
+                    <Row style={{ justifyContent: 'flex-end' }}>
+                        <Button onClick={dismissMatches}>Keep editing</Button>
+                        <Button loading={saving} variant="solid" onClick={() => create(pending)}>
+                            Save anyway
+                        </Button>
+                    </Row>
+                </Matches>
             )}
         </Wrap>
     )

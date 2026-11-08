@@ -4,7 +4,14 @@ import mongoose from 'mongoose'
 import { WORRY_LIMITS, WORRY_STATUSES } from '../../utils/domainConstants'
 import { decryptField, encryptField } from '../../utils/fieldCrypto'
 import { isObjectId, toIso } from '../../utils/serialize'
-import { validateStrict, validationMessage, worryListQuerySchema, worrySchemas } from '../../utils/validators'
+import { prepareText, similarity, SIMILARITY_THRESHOLD } from '../../utils/similarity'
+import {
+    validateStrict,
+    validationMessage,
+    worryListQuerySchema,
+    worrySchemas,
+    worrySimilarSchema,
+} from '../../utils/validators'
 import { Category } from '../categories/categories.model'
 
 import { Worry } from './worries.model'
@@ -12,6 +19,9 @@ import { Worry } from './worries.model'
 import type {
     WorryCreateInput,
     WorryDto,
+    WorryDuplicateGroupDto,
+    WorryMatchDto,
+    WorrySimilarInput,
     WorryListQuery,
     WorryPatchInput,
     WorryStatus,
@@ -196,4 +206,70 @@ export async function deleteWorry(req: Request, res: Response) {
         return
     }
     res.json({ ok: true })
+}
+
+// ── Duplicates ────────────────────────────────────────────────────────────────
+// Descriptions are encrypted, so matching happens here, in memory, on one user's
+// own worries. Entry text is never logged.
+
+const SIMILAR_MAX_RESULTS = 3
+const DUPLICATE_SCAN_MAX = 2000
+
+async function loadPrepared(userId: string) {
+    const docs = await Worry.find({ userId }).sort({ createdAt: -1 }).limit(DUPLICATE_SCAN_MAX).lean()
+    return docs.map((doc) => {
+        const worry = toWorryDto(doc)
+        return { worry, text: prepareText(worry.description) }
+    })
+}
+
+const isOpen = (w: WorryDto) => w.status !== 'resolved'
+
+// POST /api/worries/similar  { description, excludeId? }
+export async function findSimilarWorries(req: Request, res: Response) {
+    const { value, error } = validateStrict<WorrySimilarInput>(req.body, worrySimilarSchema)
+    if (error) {
+        res.status(400).json({ error: validationMessage(error) })
+        return
+    }
+    const target = prepareText(value.description)
+    const matches: WorryMatchDto[] = (await loadPrepared(req.userId!))
+        .filter(({ worry }) => worry.id !== value.excludeId)
+        .map(({ worry, text }) => ({ worry, score: Math.round(similarity(target, text) * 100) / 100 }))
+        .filter((m) => m.score >= SIMILARITY_THRESHOLD)
+        // Open worries first (the real "already on my list" case), then closest match
+        .sort((a, b) => Number(isOpen(b.worry)) - Number(isOpen(a.worry)) || b.score - a.score)
+        .slice(0, SIMILAR_MAX_RESULTS)
+    res.json({ matches })
+}
+
+// GET /api/worries/duplicates
+export async function findDuplicateWorries(req: Request, res: Response) {
+    const items = await loadPrepared(req.userId!)
+    const parent = items.map((_, i) => i)
+    const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+    const pairs: Array<[number, number, number]> = []
+
+    for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+            const score = similarity(items[i].text, items[j].text)
+            if (score < SIMILARITY_THRESHOLD) continue
+            pairs.push([i, j, score])
+            const [a, b] = [find(i), find(j)]
+            if (a !== b) parent[b] = a
+        }
+    }
+    const best = new Map<number, number>()
+    for (const [i, , score] of pairs) best.set(find(i), Math.max(best.get(find(i)) ?? 0, score))
+
+    const byRoot = new Map<number, WorryDto[]>()
+    items.forEach(({ worry }, i) => {
+        const root = find(i)
+        byRoot.set(root, [...(byRoot.get(root) ?? []), worry])
+    })
+    const groups: WorryDuplicateGroupDto[] = [...byRoot.entries()]
+        .filter(([, worries]) => worries.length > 1)
+        .map(([root, worries]) => ({ worries, score: Math.round((best.get(root) ?? 0) * 100) / 100 }))
+        .sort((a, b) => b.score - a.score)
+    res.json({ groups })
 }

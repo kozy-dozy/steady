@@ -52,6 +52,10 @@ yarn workspace steady-express seed --force    # replace only the seeded rows
   `express/src/utils/domainConstants.ts` with a relative import.
 - **POST/PATCH bodies and list queries use `validateStrict` + Joi** (`utils/validators.ts`).
   Return `400 { error: validationMessage(error) }`.
+- **Duplicate check**: text is encrypted, so similarity runs in memory on one user's own worries
+  (`utils/similarity.ts`, threshold `SIMILARITY_THRESHOLD`). `POST /api/worries/similar` takes the
+  text in the body (never the URL). Quick add asks "This might already be on your list" and never
+  blocks a save if the check fails. `/worries/duplicates` lists groups (open, delete, keep both).
 - `resolvedAt` is server-owned: set when status becomes `resolved`, cleared when reopened.
 - Categories live in Mongo per user (`ensureDefaultCategories`). "Other" (`isDefault`) can't be
   archived. Archive instead of delete so old entries keep their category.
@@ -87,7 +91,7 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 
 - Routes (`App.tsx`): `AuthLayout` (sign-in, sign-up, email-confirmed, forgot, reset) and, behind
   `ProtectedRoute`, `AppShell` (sidebar ≥1024px; header + bottom tabs + FAB on phone) with `/`,
-  `/worries/new`, `/worries/:id`, `/categories`, `/account`.
+  `/worries/new`, `/worries/duplicates`, `/worries/:id`, `/categories`, `/account`.
 - Screens live in `views/app/pages/*`; shared pieces in `views/app/components/*`
   (`WorryForm` has `quick` and `full` variants), helpers in `views/app/utils/*`.
 - Data via `services/shared/{Worry,Category}Service.ts` in `useEffect`; never fetch in components.
@@ -96,7 +100,7 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 ## Backend
 
 Module pattern: `modules/<feature>/{route,controller,model,index}.ts`, `asyncHandler`,
-`/summary` and `/reorder` declared before `/:id`.
+`/summary`, `/duplicates`, `/similar` and `/reorder` declared before `/:id`.
 
 Modules: admin (counts only), auth (with `/signup`), **categories**, members, status, **worries**.
 Removed from the base: contact, projects, quotes, services, siteContent, sitemap, testimonial, s3.

@@ -170,6 +170,11 @@ export const worrySchemas = {
     patch: Joi.object(worryFields).min(1).unknown(false),
 }
 
+export const worrySimilarSchema = Joi.object({
+    description: worryFields.description.required(),
+    excludeId: Joi.string().trim().length(24).hex(),
+}).unknown(false)
+
 export const worryListQuerySchema = Joi.object({
     categoryId: Joi.string().trim().allow(''),
     type: Joi.string().valid(...WORRY_TYPES).allow(''),
