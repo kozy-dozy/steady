@@ -13,6 +13,9 @@ dist-ssr
 build
 *.local
 
+# Real worry imports (repo is public). Format: express/imports.example.json
+express/imports/
+
 # Env files
 .env
 .env.*

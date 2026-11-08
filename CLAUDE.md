@@ -34,6 +34,7 @@ yarn lint
 yarn workspace steady-express create:admin <email> <password> [first] [last]   # also makes the 12 starter categories
 yarn workspace steady-express seed            # 12 placeholder worries for the first admin account
 yarn workspace steady-express seed --force    # replace only the seeded rows
+yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add real worries from express/imports/worries.json (gitignored), skips look-alikes
 ```
 
 > `NODE_AUTH_TOKEN` must be exported or **every** yarn command fails. See `../WORKFLOW.md`.
