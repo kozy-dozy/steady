@@ -27,6 +27,7 @@ const SignUp = lazy(() => import('@/views/ecom/auth/SignUp'))
 const EmailConfirmed = lazy(() => import('@/views/ecom/auth/EmailConfirmed'))
 const ForgotPassword = lazy(() => import('@/views/ecom/auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('@/views/ecom/auth/ResetPassword'))
+const NotFound = lazy(() => import('@/views/ecom/pages/NotFound'))
 
 const publicOnly = (page: ReactNode) => <PublicRoute>{page}</PublicRoute>
 
@@ -61,7 +62,7 @@ function AppRoutes() {
 
                 {/* The shared auth packages send signed-in users to /admin/dashboard */}
                 <Route path="/admin/*" element={<Navigate replace to="/" />} />
-                <Route path="*" element={<Navigate replace to="/" />} />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </Suspense>
     )
