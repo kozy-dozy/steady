@@ -1,0 +1,12 @@
+[
+    {
+        "description": "Gutters are overflowing every time it rains",
+        "category": "home",
+        "type": "anxiety",
+        "intensity": 5,
+        "control": "yes",
+        "status": "active",
+        "nextStep": "Get one quote this week"
+    },
+    { "description": "Feeling flat most evenings", "category": "Health / Body", "type": "depression" }
+]

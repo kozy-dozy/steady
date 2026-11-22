@@ -62,8 +62,8 @@ export const signUpSchema = Joi.object({
     password: passwordSchema,
     firstName: Joi.string().trim().max(100).required(),
     lastName: Joi.string().trim().max(100).required(),
-    role: Joi.string().valid('family', 'couple', 'solo', 'group').required(),
-    recaptchaToken: Joi.string().required(),
+    // Empty when reCAPTCHA isn't configured (RECAPTCHA_SECRET_KEY unset).
+    recaptchaToken: Joi.string().allow('').default(''),
 }).unknown(false) // Reject unknown fields
 
 export const signInSchema = Joi.object({
@@ -169,6 +169,11 @@ export const worrySchemas = {
         .unknown(false),
     patch: Joi.object(worryFields).min(1).unknown(false),
 }
+
+export const worrySimilarSchema = Joi.object({
+    description: worryFields.description.required(),
+    excludeId: Joi.string().trim().length(24).hex(),
+}).unknown(false)
 
 export const worryListQuerySchema = Joi.object({
     categoryId: Joi.string().trim().allow(''),

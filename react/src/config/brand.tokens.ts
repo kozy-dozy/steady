@@ -7,7 +7,7 @@ import type { BrandTokens, ColorScheme } from '@kozy-dozy/tokens'
  * Fonts: Outfit (display) + Atkinson Hyperlegible (body), Google Fonts.
  * AA checked: white on primary 6.9:1 · text on page 13.5:1 · muted on page 5.3:1 ·
  * text.primary on accentGold 9.1:1. Never put white text on accentGold.
- * Source of truth: designs/steady/brand.tokens.ts (theme row on the design canvas).
+ * Source of truth: workbench/designs/steady/brand.tokens.ts (theme row on the design canvas).
  */
 const colors: ColorScheme = {
     primary: '#2C6170',

@@ -2,14 +2,14 @@
 
 **Steady** (repo `steady`, workspaces `steady-*`): Jacob's private tracker for anxieties and
 depression. Log a worry in under 10 seconds, sort it by category, mark it Active / Improving /
-Resolved, and add a next small step and a reframe. **Owner-only**: no public pages and no sign-up;
-the account comes from `create:admin`. Screens: worry list (filters), quick add, edit entry,
+Resolved, and add a next small step and a reframe. **Private per member**: no public pages; anyone can
+sign up at `/sign-up` (email confirmation required) and sees only their own data. Screens: worry list (filters), quick add, edit entry,
 categories, account. A "Need help now?" 988 button is always visible. **Name, copy and sample
 entries are placeholders** (dummy data).
 
 Copied from `greenline-landscaping` (working tree, 2026-11-08; greenline has no git repo, so it was
 a `tar` export that excluded `.env*`, `node_modules`, build output and images). Design (brief,
-sitemap, wireframes, theme, mocks): `../designs/steady/`. Build decisions:
+sitemap, wireframes, theme, mocks): `../workbench/designs/steady/`. Build decisions:
 `../.claude/STEADY-BUILD.md`. Read it before re-litigating anything. Spec phases: Phase 1 (this) is
 the worry list; Phase 2 adds check-ins, charts, wins, coping toolbox, export.
 
@@ -32,8 +32,9 @@ yarn dev:react      # :5173
 yarn dev:express    # :3000
 yarn lint
 yarn workspace steady-express create:admin <email> <password> [first] [last]   # also makes the 12 starter categories
-yarn workspace steady-express seed            # 12 placeholder worries for the owner
+yarn workspace steady-express seed            # 12 placeholder worries for the first admin account
 yarn workspace steady-express seed --force    # replace only the seeded rows
+yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add real worries from express/imports/worries.json (gitignored), skips look-alikes
 ```
 
 > `NODE_AUTH_TOKEN` must be exported or **every** yarn command fails. See `../WORKFLOW.md`.
@@ -42,8 +43,8 @@ yarn workspace steady-express seed --force    # replace only the seeded rows
 
 ## Rules that are easy to break
 
-- **Privacy first.** Every `/api/categories` and `/api/worries` route is `requireAuth + requireAdmin`
-  and every query is scoped by `req.userId`. Never return another user's rows, never log entry text.
+- **Privacy first.** Every `/api/categories` and `/api/worries` route is `requireAuth` and every
+  query is scoped by `req.userId`. Never return another user's rows, never log entry text.
 - **Worry text is encrypted at rest** (`utils/fieldCrypto.ts`, AES-256-GCM): `description`,
   `nextStep`, `reframe`, `notes`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
   or index those fields. Express refuses to boot without `FIELD_ENCRYPTION_KEY` (64 hex). Changing
@@ -52,13 +53,20 @@ yarn workspace steady-express seed --force    # replace only the seeded rows
   `express/src/utils/domainConstants.ts` with a relative import.
 - **POST/PATCH bodies and list queries use `validateStrict` + Joi** (`utils/validators.ts`).
   Return `400 { error: validationMessage(error) }`.
+- **Duplicate check**: text is encrypted, so similarity runs in memory on one user's own worries
+  (`utils/similarity.ts`, threshold `SIMILARITY_THRESHOLD`). `POST /api/worries/similar` takes the
+  text in the body (never the URL). Quick add asks "This might already be on your list" and never
+  blocks a save if the check fails. `/worries/duplicates` lists groups (open, delete, keep both).
 - `resolvedAt` is server-owned: set when status becomes `resolved`, cleared when reopened.
 - Categories live in Mongo per user (`ensureDefaultCategories`). "Other" (`isDefault`) can't be
   archived. Archive instead of delete so old entries keep their category.
 - **The 988 help button stays visible** on sign-in and in the app shell (sidebar card on desktop,
   header pill on phone). Copy in `react/src/config/content.config.ts`.
 - `@kozy-dozy/foundation` sends signed-in users to `/admin/dashboard`; `App.tsx` redirects
-  `/admin/*` to `/`. Owner check is `OwnerGuard` (the shared `AuthorityGuard` would loop on `/`).
+  `/admin/*` to `/`. Don't use the shared `AuthorityGuard` (it would loop on `/`).
+- Sign-up creates the 12 starter categories (`ensureDefaultCategories`). Without `MAILERSEND_API_KEY`,
+  dev (`NODE_ENV` not production) prints confirm-email and password-reset links to the server log.
+  `create:admin <email> <password>` on an existing email resets its password and verifies it.
 - **Placeholder content is dummy data, not TODO notes.** Sample entries: `express/src/scripts/seed-data/`.
 
 ## Design system
@@ -82,9 +90,9 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 
 ## Frontend
 
-- Routes (`App.tsx`): `AuthLayout` (sign-in, forgot, reset) and, behind `ProtectedRoute` +
-  `OwnerGuard`, `AppShell` (sidebar ≥1024px; header + bottom tabs + FAB on phone) with `/`,
-  `/worries/new`, `/worries/:id`, `/categories`, `/account`.
+- Routes (`App.tsx`): `AuthLayout` (sign-in, sign-up, email-confirmed, forgot, reset) and, behind
+  `ProtectedRoute`, `AppShell` (sidebar ≥1024px; header + bottom tabs + FAB on phone) with `/`,
+  `/worries/new`, `/worries/duplicates`, `/worries/:id`, `/categories`, `/account`.
 - Screens live in `views/app/pages/*`; shared pieces in `views/app/components/*`
   (`WorryForm` has `quick` and `full` variants), helpers in `views/app/utils/*`.
 - Data via `services/shared/{Worry,Category}Service.ts` in `useEffect`; never fetch in components.
@@ -93,9 +101,9 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 ## Backend
 
 Module pattern: `modules/<feature>/{route,controller,model,index}.ts`, `asyncHandler`,
-`/summary` and `/reorder` declared before `/:id`.
+`/summary`, `/duplicates`, `/similar` and `/reorder` declared before `/:id`.
 
-Modules: admin (counts only), auth (no `/signup`), **categories**, members, status, **worries**.
+Modules: admin (counts only), auth (with `/signup`), **categories**, members, status, **worries**.
 Removed from the base: contact, projects, quotes, services, siteContent, sitemap, testimonial, s3.
 
 ## Deploy
@@ -108,7 +116,7 @@ Render (express: root `express`, `yarn install && yarn build`, `yarn start`, plu
 ## What NOT to do
 
 - No Tailwind, no npm, no committed `.env` files
-- No public pages, sign-up, analytics on entry text, or sharing features
+- No public pages, analytics on entry text, or sharing features
 - No dark mode or theme toggle
 - No white text on sand (`accentGold`)
 - Don't make the quick-add form longer: details stay behind "More details"

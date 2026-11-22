@@ -100,3 +100,31 @@ export interface WorrySummaryDto {
     /** Average intensity of active + improving worries, 1 decimal; 0 when none. */
     avgOpenIntensity: number
 }
+
+/** POST /api/worries/similar: text sent in the body (never the URL) so it stays out of logs. */
+export interface WorrySimilarInput {
+    description: string
+    /** Leave out the worry being edited. */
+    excludeId?: string
+}
+
+export interface WorryMatchDto {
+    worry: WorryDto
+    /** 0..1, higher is more alike. */
+    score: number
+}
+
+export interface WorrySimilarResponse {
+    matches: WorryMatchDto[]
+}
+
+export interface WorryDuplicateGroupDto {
+    /** Newest first. */
+    worries: WorryDto[]
+    /** Highest pair score in the group. */
+    score: number
+}
+
+export interface WorryDuplicatesResponse {
+    groups: WorryDuplicateGroupDto[]
+}

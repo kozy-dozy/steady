@@ -3,9 +3,12 @@ import ApiService from './ApiService'
 import type {
     WorryCreateInput,
     WorryDto,
+    WorryDuplicatesResponse,
     WorryListQuery,
     WorryListResponse,
     WorryPatchInput,
+    WorrySimilarInput,
+    WorrySimilarResponse,
     WorrySummaryDto,
 } from '@shared/dtos'
 
@@ -26,3 +29,10 @@ export const apiUpdateWorry = (id: string, data: WorryPatchInput) =>
 
 export const apiDeleteWorry = (id: string) =>
     ApiService.fetchData<{ ok: boolean }>({ url: `/worries/${id}`, method: 'DELETE' })
+
+/** Text goes in the POST body, never the URL, so it stays out of server and proxy logs. */
+export const apiFindSimilarWorries = (data: WorrySimilarInput) =>
+    ApiService.fetchData<WorrySimilarResponse, WorrySimilarInput>({ url: '/worries/similar', method: 'POST', data })
+
+export const apiFindDuplicateWorries = () =>
+    ApiService.fetchData<WorryDuplicatesResponse>({ url: '/worries/duplicates', method: 'GET' })

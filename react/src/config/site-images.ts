@@ -1,6 +1,6 @@
 /**
  * Site photography (sign-in panel, social card). App screens use no photos.
- * Paths and sizes match designs/steady/image-manifest.md exactly.
+ * Paths and sizes match workbench/designs/steady/image-manifest.md exactly.
  * Until the files exist, the sign-in panel shows its primaryLight background.
  */
 

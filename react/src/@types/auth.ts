@@ -25,7 +25,6 @@ export type SignUpCredential = {
     lastName: string
     email: string
     password: string
-    role: 'family' | 'couple' | 'solo' | 'group'
     recaptchaToken: string
 }
 

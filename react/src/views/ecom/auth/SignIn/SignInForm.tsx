@@ -163,7 +163,7 @@ const SignInForm = (props: SignInFormProps) => {
                                     setAlert(null)
                                 }}
                             >
-                                Didn`t get the email? Resend verification
+                                Didn&apos;t get the email? Resend verification
                             </ResendLink>
                         )}
                     </Alert>
@@ -236,6 +236,12 @@ const SignInForm = (props: SignInFormProps) => {
                                       ? 'Sign In'
                                       : 'Resend Verification Email'}
                             </Button>
+
+                            {mode === 'login' && (
+                                <FooterRow>
+                                    New here? <ActionLink to="/sign-up">Create an account</ActionLink>
+                                </FooterRow>
+                            )}
 
                             {mode === 'resend' ? (
                                 <FooterRow>

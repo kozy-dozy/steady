@@ -15,9 +15,18 @@ import {
     type SignInData,
 } from '../../utils/validators'
 import { verifyRecaptchaToken } from '../../utils/verifyRecaptchaToken'
+import { ensureDefaultCategories } from '../categories/defaultCategories'
 import Member from '../members/members.model'
 
 import type { MemberDto } from '@shared/dtos'
+
+// Local dev without MailerSend: print auth links to the server log so
+// sign-up confirmation and password reset still work. Never in production.
+const mailConfigured = () => Boolean(process.env.MAILERSEND_API_KEY)
+function logDevLink(label: string, url: string) {
+    if (process.env.NODE_ENV === 'production') return
+    console.log(`\n[dev] ${label}:\n${url}\n`)
+}
 
 function getCookieBaseOptions() {
     const isProd = process.env.NODE_ENV === 'production'
@@ -44,11 +53,11 @@ export async function signUp(req: Request, res: Response) {
     const verificationToken = crypto.randomBytes(32).toString('hex')
     const tokenExpires = new Date(Date.now() + ONE_DAY_MS)
 
-    const { recaptchaToken, email, password, firstName, lastName, role } =
+    const { recaptchaToken, email, password, firstName, lastName } =
         validatedData
 
-    const isHuman = await verifyRecaptchaToken(recaptchaToken)
-    if (!isHuman) {
+    const recaptchaOn = Boolean(process.env.RECAPTCHA_SECRET_KEY)
+    if (recaptchaOn && !(await verifyRecaptchaToken(recaptchaToken))) {
         res.status(400).json({
             error: 'reCAPTCHA validation failed. Please try again.',
         })
@@ -71,12 +80,12 @@ export async function signUp(req: Request, res: Response) {
             password: await bcrypt.hash(password, 12),
             firstName,
             lastName,
-            role,
             emailVerified: false,
             emailVerificationToken: verificationToken,
             emailVerificationTokenExpires: tokenExpires,
             authority: ['user'],
         })
+        await ensureDefaultCategories(String(member._id))
 
         const memberDto: MemberDto = {
             id: member.id,
@@ -92,22 +101,25 @@ export async function signUp(req: Request, res: Response) {
             process.env.API_BASE_URL
         }/auth/confirm-email?token=${encodeURIComponent(verificationToken)}`
 
-        try {
-            await sendEmailTemplate({
-                to: member.email,
-                subject: `Welcome, ${member.firstName}!`, // optional
-                templateId: process.env.MAILERSEND_TEMPLATE_SIGN_UP!, // put your template id here or env
-                data: {
-                    name: member.firstName,
-                    action_url: verificationUrl,
-                    support_url: `${process.env.FRONTEND_BASE_URL}/support`,
-                    login_url: `${process.env.FRONTEND_BASE_URL}/login`,
-                    account_name: process.env.APP_NAME || 'Steady',
-                    from_name: process.env.MAILERSEND_FROM_NAME || 'Steady',
-                },
-            })
-        } catch (error) {
-            console.error('Email send error (MailerSend):', error)
+        logDevLink(`Confirm email for ${member.email}`, verificationUrl)
+        if (mailConfigured()) {
+            try {
+                await sendEmailTemplate({
+                    to: member.email,
+                    subject: `Welcome, ${member.firstName}!`, // optional
+                    templateId: process.env.MAILERSEND_TEMPLATE_SIGN_UP!, // put your template id here or env
+                    data: {
+                        name: member.firstName,
+                        action_url: verificationUrl,
+                        support_url: `${process.env.FRONTEND_BASE_URL}/support`,
+                        login_url: `${process.env.FRONTEND_BASE_URL}/login`,
+                        account_name: process.env.APP_NAME || 'Steady',
+                        from_name: process.env.MAILERSEND_FROM_NAME || 'Steady',
+                    },
+                })
+            } catch (error) {
+                console.error('Email send error (MailerSend):', error)
+            }
         }
 
         res.status(201).json({
@@ -228,9 +240,7 @@ export async function confirmEmail(req: Request, res: Response) {
     })
 
     if (!member) {
-        res.status(400).json({
-            error: 'Confirmation link is invalid or has expired. Please request a new one.',
-        })
+        res.redirect(`${process.env.FRONTEND_BASE_URL}/email-confirmed?status=invalid`)
         return
     }
 
@@ -241,7 +251,7 @@ export async function confirmEmail(req: Request, res: Response) {
 
     // Optional: redirect or send success response
     // res.status(200).json({ message: 'Email confirmed successfully!' });
-    res.redirect(`${process.env.FRONTEND_BASE_URL}/email-confirmed`) // Redirect to frontend confirmation page
+    res.redirect(`${process.env.FRONTEND_BASE_URL}/email-confirmed?status=confirmed`)
 }
 
 export async function resendVerification(req: Request, res: Response) {
@@ -279,15 +289,24 @@ export async function resendVerification(req: Request, res: Response) {
         process.env.API_BASE_URL
     }/auth/confirm-email?token=${encodeURIComponent(verificationToken)}`
 
-        await sendEmailTemplate({
-            to: member.email,
-            subject: 'Resend: Confirm your email address',
-            templateId: process.env.MAILERSEND_TEMPLATE_VERIFY_EMAIL!,
-            data: {
-                name: member.firstName,
-                action_url: verificationUrl,
-            },
-        })
+    logDevLink(`Confirm email for ${member.email}`, verificationUrl)
+    if (mailConfigured()) {
+        try {
+            await sendEmailTemplate({
+                to: member.email,
+                subject: 'Resend: Confirm your email address',
+                templateId: process.env.MAILERSEND_TEMPLATE_VERIFY_EMAIL!,
+                data: {
+                    name: member.firstName,
+                    action_url: verificationUrl,
+                },
+            })
+        } catch (error) {
+            console.error('Email send error (MailerSend):', error)
+        }
+    }
+
+    res.status(200).json({ message: 'We sent a new confirmation email.' })
 }
 
 // POST /auth/refresh
@@ -364,16 +383,19 @@ export async function forgotPassword(req: Request, res: Response) {
             process.env.FRONTEND_BASE_URL
         }/reset-password?token=${encodeURIComponent(rawToken)}`
 
-        await sendEmailTemplate({
-            to: member.email,
-            subject: 'Reset your password',
-            templateId: process.env.MAILERSEND_TEMPLATE_RESET_PASSWORD!,
-            data: {
-                name: member.firstName,
-                action_url: resetUrl,
-                support_url: `${process.env.FRONTEND_BASE_URL}/support`,
-            },
-        })
+        logDevLink(`Password reset for ${member.email}`, resetUrl)
+        if (mailConfigured()) {
+            await sendEmailTemplate({
+                to: member.email,
+                subject: 'Reset your password',
+                templateId: process.env.MAILERSEND_TEMPLATE_RESET_PASSWORD!,
+                data: {
+                    name: member.firstName,
+                    action_url: resetUrl,
+                    support_url: `${process.env.FRONTEND_BASE_URL}/support`,
+                },
+            })
+        }
 
         res.status(200).json({ message: genericMsg })
     } catch (err) {
