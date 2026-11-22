@@ -1,13 +1,14 @@
 import { Request, Response } from 'express'
+import mongoose from 'mongoose'
 
 import { BRIGHT_SPOT_LIMITS } from '../../utils/domainConstants'
 import { decryptField, encryptField } from '../../utils/fieldCrypto'
 import { isObjectId, toIso } from '../../utils/serialize'
-import { brightSpotImageSchema, brightSpotSchema, validateStrict, validationMessage } from '../../utils/validators'
+import { brightSpotImageSchema, brightSpotSchema, reorderBrightSpotsSchema, validateStrict, validationMessage } from '../../utils/validators'
 
 import { BrightSpot, BrightSpotImage } from './brightSpots.model'
 
-import type { BrightSpotDto, BrightSpotImageInput, BrightSpotImageResponse, BrightSpotInput } from '@shared/dtos'
+import type { BrightSpotDto, BrightSpotImageInput, BrightSpotImageResponse, BrightSpotInput, BrightSpotReorderInput } from '@shared/dtos'
 
 const NOT_FOUND = 'Bright spot not found'
 const NO_IMAGE = 'No photo for this bright spot'
@@ -28,9 +29,9 @@ function readBody(req: Request, res: Response) {
     return error ? null : value
 }
 
-// GET /api/bright-spots  (newest first)
+// GET /api/bright-spots  (your order; new ones on top)
 export async function listBrightSpots(req: Request, res: Response) {
-    const docs = await BrightSpot.find({ userId: req.userId }).sort({ createdAt: -1 }).limit(BRIGHT_SPOT_LIMITS.max).lean()
+    const docs = await BrightSpot.find({ userId: req.userId }).sort({ sortOrder: 1, createdAt: -1 }).limit(BRIGHT_SPOT_LIMITS.max).lean()
     res.json({ brightSpots: docs.map(toBrightSpotDto) })
 }
 
@@ -42,8 +43,31 @@ export async function createBrightSpot(req: Request, res: Response) {
         res.status(409).json({ error: `You can keep up to ${BRIGHT_SPOT_LIMITS.max} bright spots.` })
         return
     }
-    const created = await BrightSpot.create({ userId: req.userId, text: encryptField(value.text) })
+    // On top of the list: one below the current lowest sortOrder
+    const first = await BrightSpot.findOne({ userId: req.userId }, { sortOrder: 1 }).sort({ sortOrder: 1 }).lean()
+    const created = await BrightSpot.create({
+        userId: req.userId,
+        text: encryptField(value.text),
+        sortOrder: (first?.sortOrder ?? 0) - 1,
+    })
     res.status(201).json({ brightSpot: toBrightSpotDto(created) })
+}
+
+// PATCH /api/bright-spots/reorder  { ids }
+export async function reorderBrightSpots(req: Request, res: Response) {
+    const { value, error } = validateStrict<BrightSpotReorderInput>(req.body, reorderBrightSpotsSchema)
+    if (error) {
+        res.status(400).json({ error: validationMessage(error) })
+        return
+    }
+    const owner = new mongoose.Types.ObjectId(req.userId!)
+    // Scoped by userId, so ids that aren't yours are simply ignored
+    await BrightSpot.bulkWrite(
+        value.ids.map((id, i) => ({
+            updateOne: { filter: { _id: new mongoose.Types.ObjectId(id), userId: owner }, update: { $set: { sortOrder: i } } },
+        })),
+    )
+    res.json({ ok: true })
 }
 
 // PATCH /api/bright-spots/:id  { text }

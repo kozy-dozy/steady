@@ -186,7 +186,7 @@ type Props = {
     showPhotos: boolean
 }
 
-/** The always-there counterweight on the worry pages. All items, newest first; the list scrolls. */
+/** The always-there counterweight on the worry pages. All items in your order (set on the Bright Spots page); the list scrolls. */
 export default function BrightSpotsPanel({ open, onOpenChange, showPhotos }: Props) {
     const [spots, setSpots] = useState<BrightSpotDto[] | null>(null)
     const [adding, setAdding] = useState(false)

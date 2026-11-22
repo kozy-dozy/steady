@@ -21,6 +21,7 @@ export interface BrightSpotImageMeta {
     updatedAt: string
 }
 
+/** Lists come back in the user's order (drag and drop on the Bright Spots page). */
 export interface BrightSpotDto {
     id: string
     text: string
@@ -32,6 +33,11 @@ export interface BrightSpotDto {
 
 export interface BrightSpotInput {
     text: string
+}
+
+/** PATCH /api/bright-spots/reorder: every id, in the order to show them. */
+export interface BrightSpotReorderInput {
+    ids: string[]
 }
 
 /** PUT /api/bright-spots/:id/image */

@@ -62,7 +62,7 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
   (no form Save) and return the worry. Checking one off shows Undo for 6s. Quick add takes only
   `firstActionItem`. The old single `nextStep` is legacy: `migrateNextSteps()` moves it at boot.
 - **Bright Spots** (things going okay, the counterweight to worries): `/api/bright-spots`, text
-  encrypted, newest first. The fixed panel (`components/brightSpots/`) shows on `/` and
+  encrypted, in the user's drag-and-drop order (`sortOrder`, `PATCH /reorder`; new ones on top). The fixed panel (`components/brightSpots/`) shows on `/` and
   `/worries/*` only: right side on desktop (open by default, AppShell reserves its width), pill +
   sheet on phone (closed by default). Show/hide is remembered per breakpoint in `localStorage`.
   The name lives only in `CONTENT_CONFIG.brightSpots.title`.

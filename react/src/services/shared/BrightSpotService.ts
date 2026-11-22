@@ -1,10 +1,14 @@
 import ApiService from './ApiService'
 
-import type { BrightSpotDto, BrightSpotImageInput, BrightSpotImageResponse, BrightSpotInput } from '@shared/dtos'
+import type { BrightSpotDto, BrightSpotImageInput, BrightSpotImageResponse, BrightSpotInput, BrightSpotReorderInput } from '@shared/dtos'
 
-/** Newest first. */
+/** In your order (new ones on top). */
 export const apiListBrightSpots = () =>
     ApiService.fetchData<{ brightSpots: BrightSpotDto[] }>({ url: '/bright-spots', method: 'GET' })
+
+/** Save a new order: every id, top to bottom. */
+export const apiReorderBrightSpots = (ids: string[]) =>
+    ApiService.fetchData<{ ok: boolean }, BrightSpotReorderInput>({ url: '/bright-spots/reorder', method: 'PATCH', data: { ids } })
 
 export const apiCreateBrightSpot = (data: BrightSpotInput) =>
     ApiService.fetchData<{ brightSpot: BrightSpotDto }, BrightSpotInput>({ url: '/bright-spots', method: 'POST', data })

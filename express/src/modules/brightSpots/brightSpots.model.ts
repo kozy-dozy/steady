@@ -10,12 +10,14 @@ const BrightSpotSchema = new Schema(
             type: new Schema({ width: Number, height: Number, updatedAt: Date }, { _id: false }),
             default: null,
         },
+        /** Your drag-and-drop order. New ones go on top (lowest number); ties fall back to newest first. */
+        sortOrder: { type: Number, default: 0 },
         seeded: { type: Boolean, default: false },
     },
     { timestamps: true },
 )
 
-BrightSpotSchema.index({ userId: 1, createdAt: -1 })
+BrightSpotSchema.index({ userId: 1, sortOrder: 1, createdAt: -1 })
 
 export const BrightSpot = mongoose.model('BrightSpot', BrightSpotSchema, 'brightSpots')
 

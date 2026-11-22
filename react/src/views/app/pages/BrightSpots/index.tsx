@@ -1,6 +1,7 @@
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import { BRIGHT_SPOT_LIMITS } from '@shared/dtos'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LuCamera, LuImagePlus, LuPencil, LuSun, LuTrash2, LuX } from 'react-icons/lu'
+import { LuCamera, LuGripVertical, LuImagePlus, LuPencil, LuSun, LuTrash2, LuX } from 'react-icons/lu'
 import styled from 'styled-components'
 
 import { CONTENT_CONFIG } from '@/config/content.config'
@@ -10,6 +11,7 @@ import {
     apiDeleteBrightSpotImage,
     apiListBrightSpots,
     apiPutBrightSpotImage,
+    apiReorderBrightSpots,
     apiUpdateBrightSpot,
 } from '@/services/shared/BrightSpotService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
@@ -23,6 +25,7 @@ import { errorMessage, longDate } from '../../utils/worry'
 
 import type { BrightSpotDto } from '@shared/dtos'
 import type { BrightSpotImageInput } from '@shared/dtos'
+import type { DraggableProvided, DropResult } from '@hello-pangea/dnd'
 import type { ChangeEvent, FormEvent } from 'react'
 
 const COPY = CONTENT_CONFIG.brightSpots
@@ -47,16 +50,48 @@ const List = styled.ul`
     padding: 0;
 `
 
-const Item = styled.li`
+const Item = styled.li<{ $dragging?: boolean }>`
     display: flex;
     align-items: center;
     gap: ${({ theme }) => theme.spacing.sm};
     padding: 8px 0;
     border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
+    background: ${({ theme }) => theme.colors.bg.card};
+    border-radius: ${({ theme, $dragging }) => ($dragging ? theme.radius.md : '0')};
+    box-shadow: ${({ theme, $dragging }) => ($dragging ? theme.shadow.lg : 'none')};
 
     &:last-child {
         border-bottom: 0;
     }
+`
+
+/** Drag handle: grab here (or focus it and press Space, then arrow keys) to move a row. */
+const Handle = styled.div`
+    flex: none;
+    width: 32px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${({ theme }) => theme.colors.text.muted};
+    cursor: grab;
+    touch-action: none;
+    border-radius: ${({ theme }) => theme.radius.sm};
+
+    &:hover {
+        color: ${({ theme }) => theme.colors.text.primary};
+    }
+    &:focus-visible {
+        outline: 2px solid ${({ theme }) => theme.colors.primary};
+    }
+`
+
+const EditBody = styled.div`
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: ${({ theme }) => theme.spacing.sm};
 `
 
 const Text = styled.div`
@@ -120,7 +155,15 @@ async function uploadPhoto(spotId: string, photo: BrightSpotImageInput) {
     return res.brightSpot
 }
 
-function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (s: BrightSpotDto) => void; onDeleted: (id: string) => void }) {
+type RowProps = {
+    spot: BrightSpotDto
+    onSaved: (s: BrightSpotDto) => void
+    onDeleted: (id: string) => void
+    drag: DraggableProvided
+    isDragging: boolean
+}
+
+function SpotRow({ spot, onSaved, onDeleted, drag, isDragging }: RowProps) {
     const [mode, setMode] = useState<'view' | 'edit' | 'confirm'>('view')
     const [text, setText] = useState(spot.text)
     const [error, setError] = useState('')
@@ -187,47 +230,58 @@ function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (
         }
     }
 
+    const handle = (
+        <Handle {...drag.dragHandleProps} aria-label={`Drag to reorder: ${spot.text}`}>
+            <LuGripVertical aria-hidden="true" size={18} />
+        </Handle>
+    )
+    const itemProps = { ref: drag.innerRef, ...drag.draggableProps, $dragging: isDragging }
+
     if (mode === 'edit') {
         return (
-            <Item style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                <AddRow noValidate onSubmit={save}>
-                    <TextInput
-                        // eslint-disable-next-line jsx-a11y/no-autofocus
-                        autoFocus
-                        aria-label="Edit bright spot"
-                        maxLength={BRIGHT_SPOT_LIMITS.textMaxLength}
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Escape' && setMode('view')}
-                    />
-                    <PillButton $on type="submit" disabled={busy}>
-                        Save
-                    </PillButton>
-                    <PillButton
-                        type="button"
-                        onClick={() => {
-                            setText(spot.text)
-                            setMode('view')
-                            setError('')
-                        }}
-                    >
-                        Cancel
-                    </PillButton>
-                </AddRow>
-                {spot.image && (
-                    <div>
-                        <PillButton type="button" disabled={busy} onClick={removePhoto}>
-                            Remove photo
+            <Item {...itemProps}>
+                {handle}
+                <EditBody>
+                    <AddRow noValidate onSubmit={save}>
+                        <TextInput
+                            // eslint-disable-next-line jsx-a11y/no-autofocus
+                            autoFocus
+                            aria-label="Edit bright spot"
+                            maxLength={BRIGHT_SPOT_LIMITS.textMaxLength}
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Escape' && setMode('view')}
+                        />
+                        <PillButton $on type="submit" disabled={busy}>
+                            Save
                         </PillButton>
-                    </div>
-                )}
-                {error && <ErrorText role="alert">{error}</ErrorText>}
+                        <PillButton
+                            type="button"
+                            onClick={() => {
+                                setText(spot.text)
+                                setMode('view')
+                                setError('')
+                            }}
+                        >
+                            Cancel
+                        </PillButton>
+                    </AddRow>
+                    {spot.image && (
+                        <div>
+                            <PillButton type="button" disabled={busy} onClick={removePhoto}>
+                                Remove photo
+                            </PillButton>
+                        </div>
+                    )}
+                    {error && <ErrorText role="alert">{error}</ErrorText>}
+                </EditBody>
             </Item>
         )
     }
 
     return (
-        <Item>
+        <Item {...itemProps}>
+            {handle}
             <BrightSpotPhoto spot={spot} variant="thumb" />
             <Text>
                 <span>{spot.text}</span>
@@ -274,6 +328,25 @@ export default function BrightSpots() {
     const [busy, setBusy] = useState(false)
     const [photo, setPhoto] = useState<File | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
+    const [orderError, setOrderError] = useState('')
+
+    /** Move a row, show it right away, then save; put it back if saving fails. */
+    const onDragEnd = async ({ source, destination }: DropResult) => {
+        if (!spots || !destination || destination.index === source.index) return
+        const before = spots
+        const next = [...spots]
+        const [moved] = next.splice(source.index, 1)
+        next.splice(destination.index, 0, moved)
+        setSpots(next)
+        setOrderError('')
+        try {
+            await apiReorderBrightSpots(next.map((s) => s.id))
+        } catch (err) {
+            setSpots(before)
+            setOrderError(errorMessage(err, 'Could not save the new order. Please try again.'))
+        }
+    }
+
     const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : ''), [photo])
     useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview])
 
@@ -385,16 +458,30 @@ export default function BrightSpots() {
                 <Muted>{COPY.empty}</Muted>
             ) : (
                 <Card>
-                    <List aria-label={COPY.title}>
-                        {spots.map((s) => (
-                            <SpotRow
-                                key={s.id}
-                                spot={s}
-                                onSaved={(u) => setSpots((all) => (all ?? []).map((x) => (x.id === u.id ? u : x)))}
-                                onDeleted={(id) => setSpots((all) => (all ?? []).filter((x) => x.id !== id))}
-                            />
-                        ))}
-                    </List>
+                    <Muted style={{ fontSize: 14 }}>Drag the handle to put them in your order. The panel shows the same order.</Muted>
+                    {orderError && <ErrorText role="alert">{orderError}</ErrorText>}
+                    <DragDropContext onDragEnd={onDragEnd}>
+                        <Droppable droppableId="bright-spots">
+                            {(drop) => (
+                                <List ref={drop.innerRef} {...drop.droppableProps} aria-label={COPY.title}>
+                                    {spots.map((s, i) => (
+                                        <Draggable key={s.id} draggableId={s.id} index={i}>
+                                            {(drag, snapshot) => (
+                                                <SpotRow
+                                                    spot={s}
+                                                    drag={drag}
+                                                    isDragging={snapshot.isDragging}
+                                                    onSaved={(u) => setSpots((all) => (all ?? []).map((x) => (x.id === u.id ? u : x)))}
+                                                    onDeleted={(id) => setSpots((all) => (all ?? []).filter((x) => x.id !== id))}
+                                                />
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {drop.placeholder}
+                                </List>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
                 </Card>
             )}
         </Wrap>

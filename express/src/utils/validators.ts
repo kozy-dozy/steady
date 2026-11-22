@@ -198,6 +198,10 @@ export const brightSpotSchema = Joi.object({
     text: Joi.string().trim().min(1).max(BRIGHT_SPOT_LIMITS.textMaxLength).required(),
 }).unknown(false)
 
+export const reorderBrightSpotsSchema = Joi.object({
+    ids: Joi.array().items(Joi.string().trim().length(24).hex()).min(1).max(BRIGHT_SPOT_LIMITS.max).unique().required(),
+}).unknown(false)
+
 export const brightSpotImageSchema = Joi.object({
     mime: Joi.string().valid(...BRIGHT_SPOT_IMAGE_TYPES).required(),
     // base64 grows bytes by 4/3
