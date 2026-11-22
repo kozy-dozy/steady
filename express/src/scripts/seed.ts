@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 import { Category } from '../modules/categories/categories.model'
 import { ensureDefaultCategories } from '../modules/categories/defaultCategories'
 import Member from '../modules/members/members.model'
+import { actionItemsFrom } from '../modules/worries/actionItems'
 import { Worry } from '../modules/worries/worries.model'
 import { encryptField } from '../utils/fieldCrypto'
 
@@ -62,7 +63,7 @@ async function run() {
             intensity: w.intensity,
             control: w.control,
             status: w.status,
-            nextStep: encryptField(w.nextStep),
+            actionItems: actionItemsFrom(w.nextStep),
             reframe: encryptField(w.reframe),
             notes: encryptField(w.notes),
             tags: w.tags,

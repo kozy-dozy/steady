@@ -21,6 +21,7 @@ import mongoose from 'mongoose'
 import { Category } from '../modules/categories/categories.model'
 import { ensureDefaultCategories } from '../modules/categories/defaultCategories'
 import Member from '../modules/members/members.model'
+import { actionItemsFrom } from '../modules/worries/actionItems'
 import { Worry } from '../modules/worries/worries.model'
 import { WORRY_CONTROLS, WORRY_LIMITS, WORRY_STATUSES } from '../utils/domainConstants'
 import { decryptField, encryptField } from '../utils/fieldCrypto'
@@ -111,7 +112,7 @@ async function run() {
                 intensity,
                 control,
                 status,
-                nextStep: encryptField(row.nextStep?.trim() ?? ''),
+                actionItems: actionItemsFrom(row.nextStep),
                 reframe: encryptField(row.reframe?.trim() ?? ''),
                 notes: encryptField(row.notes?.trim() ?? ''),
                 tags: (row.tags ?? []).map(norm).filter(Boolean).slice(0, WORRY_LIMITS.tagsMax),

@@ -17,6 +17,7 @@ import { categoriesRoutes } from './modules/categories'
 import { membersRoutes } from './modules/members'
 import { statusRoutes } from './modules/status'
 import { worriesRoutes } from './modules/worries'
+import { migrateNextSteps } from './modules/worries/actionItems'
 import { assertFieldKey } from './utils/fieldCrypto'
 import { rateLimitMonitor } from './middleware/rateLimitMonitor'
 
@@ -146,6 +147,8 @@ const port = Number(process.env.PORT ?? 3000)
     try {
         await mongoose.connect(MONGODB_URI)
         console.log('mongoose connected')
+        // Never block boot on the one-time move; it retries on the next start
+        await migrateNextSteps().catch((err) => Sentry.captureException(err))
         app.listen(port, () => {
             console.log(`Server listening on port ${port}`)
         })

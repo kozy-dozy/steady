@@ -63,7 +63,8 @@ const Step = styled.span`
 `
 
 export default function WorryCard({ worry, category }: { worry: WorryDto; category?: CategoryDto }) {
-    const step = worry.nextStep ? `Next step: ${worry.nextStep}` : worry.reframe ? `Reframe: ${worry.reframe}` : ''
+    const next = worry.actionItems.find((i) => !i.done)
+    const step = next ? `Next: ${next.text}` : worry.reframe ? `Reframe: ${worry.reframe}` : ''
     return (
         <CardLink to={`/worries/${worry.id}`}>
             <Top>

@@ -2,7 +2,7 @@
 
 **Steady** (repo `steady`, workspaces `steady-*`): Jacob's private tracker for anxieties and
 depression. Log a worry in under 10 seconds, sort it by category, mark it Active / Improving /
-Resolved, and add a next small step and a reframe. **Private per member**: no public pages; anyone can
+Resolved, and add action items (up to 3 open at a time) and a reframe. **Private per member**: no public pages; anyone can
 sign up at `/sign-up` (email confirmation required) and sees only their own data. Screens: worry list (filters), quick add, edit entry,
 categories, account. A "Need help now?" 988 button is always visible. **Name, copy and sample
 entries are placeholders** (dummy data).
@@ -46,7 +46,7 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
 - **Privacy first.** Every `/api/categories` and `/api/worries` route is `requireAuth` and every
   query is scoped by `req.userId`. Never return another user's rows, never log entry text.
 - **Worry text is encrypted at rest** (`utils/fieldCrypto.ts`, AES-256-GCM): `description`,
-  `nextStep`, `reframe`, `notes`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
+  `actionItems[].text`, `reframe`, `notes`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
   or index those fields. Express refuses to boot without `FIELD_ENCRYPTION_KEY` (64 hex). Changing
   or losing the key makes old entries unreadable. Tags are plain text (kept filterable).
 - **Express imports `@shared/dtos` with `import type` only.** Runtime constants come through
@@ -57,6 +57,10 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
   (`utils/similarity.ts`, threshold `SIMILARITY_THRESHOLD`). `POST /api/worries/similar` takes the
   text in the body (never the URL). Quick add asks "This might already be on your list" and never
   blocks a save if the check fails. `/worries/duplicates` lists groups (open, delete, keep both).
+- **Action items** (`modules/worries/actionItems.ts`): at most `WORRY_LIMITS.actionItemsOpenMax` (3)
+  open per worry; `POST/PATCH/DELETE /api/worries/:id/action-items[/:itemId]` save one at a time
+  (no form Save) and return the worry. Checking one off shows Undo for 6s. Quick add takes only
+  `firstActionItem`. The old single `nextStep` is legacy: `migrateNextSteps()` moves it at boot.
 - `resolvedAt` is server-owned: set when status becomes `resolved`, cleared when reopened.
 - Categories live in Mongo per user (`ensureDefaultCategories`). "Other" (`isDefault`) can't be
   archived. Archive instead of delete so old entries keep their category.

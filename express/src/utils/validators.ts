@@ -150,7 +150,6 @@ const worryFields = {
     intensity: Joi.number().integer().min(WORRY_LIMITS.intensityMin).max(WORRY_LIMITS.intensityMax),
     control: Joi.string().valid(...WORRY_CONTROLS),
     status: Joi.string().valid(...WORRY_STATUSES),
-    nextStep: Joi.string().trim().allow('').max(WORRY_LIMITS.nextStepMaxLength),
     reframe: Joi.string().trim().allow('').max(WORRY_LIMITS.reframeMaxLength),
     notes: Joi.string().trim().allow('').max(WORRY_LIMITS.notesMaxLength),
     tags: Joi.array().items(Joi.string().trim().max(WORRY_LIMITS.tagMaxLength)).max(WORRY_LIMITS.tagsMax),
@@ -164,10 +163,18 @@ export const worrySchemas = {
         isAnxiety: worryFields.isAnxiety.required(),
         isDepression: worryFields.isDepression.required(),
         intensity: worryFields.intensity.required(),
+        firstActionItem: Joi.string().trim().allow('').max(WORRY_LIMITS.actionItemMaxLength),
     })
         .custom((v, helpers) => (v.isAnxiety || v.isDepression ? v : helpers.message({ custom: 'Choose anxiety, depression, or both.' })))
         .unknown(false),
     patch: Joi.object(worryFields).min(1).unknown(false),
+}
+
+export const actionItemSchemas = {
+    create: Joi.object({
+        text: Joi.string().trim().min(1).max(WORRY_LIMITS.actionItemMaxLength).required(),
+    }).unknown(false),
+    patch: Joi.object({ done: Joi.boolean().required() }).unknown(false),
 }
 
 export const worrySimilarSchema = Joi.object({

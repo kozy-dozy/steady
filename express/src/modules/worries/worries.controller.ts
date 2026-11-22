@@ -6,6 +6,7 @@ import { decryptField, encryptField } from '../../utils/fieldCrypto'
 import { isObjectId, toIso } from '../../utils/serialize'
 import { prepareText, similarity, SIMILARITY_THRESHOLD } from '../../utils/similarity'
 import {
+    actionItemSchemas,
     validateStrict,
     validationMessage,
     worryListQuerySchema,
@@ -14,9 +15,12 @@ import {
 } from '../../utils/validators'
 import { Category } from '../categories/categories.model'
 
+import { newActionItem, openCount, toActionItemDtos } from './actionItems'
 import { Worry } from './worries.model'
 
 import type {
+    ActionItemCreateInput,
+    ActionItemPatchInput,
     WorryCreateInput,
     WorryDto,
     WorryDuplicateGroupDto,
@@ -29,7 +33,9 @@ import type {
 } from '@shared/dtos'
 
 const NOT_FOUND = 'Entry not found'
-const ENCRYPTED = ['description', 'nextStep', 'reframe', 'notes'] as const
+const ENCRYPTED = ['description', 'reframe', 'notes'] as const
+const ITEM_NOT_FOUND = 'Action item not found'
+const OPEN_LIMIT = `You have ${WORRY_LIMITS.actionItemsOpenMax} action items. Finish one to add another.`
 
 export function toWorryDto(doc: any): WorryDto {
     return {
@@ -41,7 +47,7 @@ export function toWorryDto(doc: any): WorryDto {
         intensity: Number(doc.intensity ?? 1),
         control: doc.control ?? 'partly',
         status: doc.status ?? 'active',
-        nextStep: decryptField(doc.nextStep),
+        actionItems: toActionItemDtos(doc.actionItems),
         reframe: decryptField(doc.reframe),
         notes: decryptField(doc.notes),
         tags: Array.isArray(doc.tags) ? doc.tags : [],
@@ -150,8 +156,10 @@ export async function createWorry(req: Request, res: Response) {
         return
     }
     const status = value.status ?? 'active'
+    const { firstActionItem, ...fields } = value
     const created = await Worry.create({
-        ...encryptBody(value),
+        ...encryptBody(fields),
+        actionItems: firstActionItem?.trim() ? [newActionItem(firstActionItem)] : [],
         userId,
         status,
         resolvedAt: status === 'resolved' ? new Date() : null,
@@ -206,6 +214,77 @@ export async function deleteWorry(req: Request, res: Response) {
         return
     }
     res.json({ ok: true })
+}
+
+// ── Action items ──────────────────────────────────────────────────────────────
+// Saved one at a time (no form Save button). At most WORRY_LIMITS.actionItemsOpenMax open.
+
+async function findOwnedWorry(req: Request, res: Response) {
+    if (!isObjectId(req.params.id)) {
+        res.status(404).json({ error: NOT_FOUND })
+        return null
+    }
+    const doc = await Worry.findOne({ _id: req.params.id, userId: req.userId })
+    if (!doc) res.status(404).json({ error: NOT_FOUND })
+    return doc
+}
+
+function findItem(doc: any, req: Request, res: Response) {
+    const item = isObjectId(req.params.itemId) ? doc.actionItems.id(req.params.itemId) : null
+    if (!item) res.status(404).json({ error: ITEM_NOT_FOUND })
+    return item
+}
+
+// POST /api/worries/:id/action-items  { text }
+export async function addActionItem(req: Request, res: Response) {
+    const { value, error } = validateStrict<ActionItemCreateInput>(req.body, actionItemSchemas.create)
+    if (error) {
+        res.status(400).json({ error: validationMessage(error) })
+        return
+    }
+    const doc = await findOwnedWorry(req, res)
+    if (!doc) return
+    if (openCount(doc.actionItems) >= WORRY_LIMITS.actionItemsOpenMax) {
+        res.status(409).json({ error: OPEN_LIMIT })
+        return
+    }
+    doc.actionItems.push(newActionItem(value.text))
+    await doc.save()
+    res.status(201).json({ worry: toWorryDto(doc) })
+}
+
+// PATCH /api/worries/:id/action-items/:itemId  { done }
+export async function updateActionItem(req: Request, res: Response) {
+    const { value, error } = validateStrict<ActionItemPatchInput>(req.body, actionItemSchemas.patch)
+    if (error) {
+        res.status(400).json({ error: validationMessage(error) })
+        return
+    }
+    const doc = await findOwnedWorry(req, res)
+    if (!doc) return
+    const item = findItem(doc, req, res)
+    if (!item) return
+    if (item.done && !value.done && openCount(doc.actionItems) >= WORRY_LIMITS.actionItemsOpenMax) {
+        res.status(409).json({ error: OPEN_LIMIT })
+        return
+    }
+    if (item.done !== value.done) {
+        item.done = value.done
+        item.doneAt = value.done ? new Date() : null
+        await doc.save()
+    }
+    res.json({ worry: toWorryDto(doc) })
+}
+
+// DELETE /api/worries/:id/action-items/:itemId
+export async function deleteActionItem(req: Request, res: Response) {
+    const doc = await findOwnedWorry(req, res)
+    if (!doc) return
+    const item = findItem(doc, req, res)
+    if (!item) return
+    item.deleteOne()
+    await doc.save()
+    res.json({ worry: toWorryDto(doc) })
 }
 
 // ── Duplicates ────────────────────────────────────────────────────────────────

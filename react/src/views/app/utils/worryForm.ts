@@ -12,7 +12,8 @@ export interface WorryFormValues {
     intensity: number
     control: WorryControl
     status: WorryStatus
-    nextStep: string
+    /** Quick add only. The edit screen manages action items itself. */
+    firstActionItem: string
     reframe: string
     notes: string
     tagsText: string
@@ -25,7 +26,7 @@ export const emptyWorry = (categoryId = ''): WorryFormValues => ({
     intensity: 5,
     control: 'partly',
     status: 'active',
-    nextStep: '',
+    firstActionItem: '',
     reframe: '',
     notes: '',
     tagsText: '',
@@ -38,7 +39,7 @@ export const toFormValues = (w: WorryDto): WorryFormValues => ({
     intensity: w.intensity,
     control: w.control,
     status: w.status,
-    nextStep: w.nextStep,
+    firstActionItem: '',
     reframe: w.reframe,
     notes: w.notes,
     tagsText: w.tags.join(', '),
@@ -51,11 +52,13 @@ export const toInput = (v: WorryFormValues): WorryCreateInput => ({
     intensity: v.intensity,
     control: v.control,
     status: v.status,
-    nextStep: v.nextStep.trim(),
     reframe: v.reframe.trim(),
     notes: v.notes.trim(),
     tags: parseTags(v.tagsText),
 })
+
+/** Create body: adds the optional first action item. */
+export const toCreateInput = (v: WorryFormValues): WorryCreateInput => ({ ...toInput(v), firstActionItem: v.firstActionItem.trim() })
 
 export const worrySchema = Yup.object({
     categoryId: Yup.string().required('Pick a category.'),
@@ -64,7 +67,7 @@ export const worrySchema = Yup.object({
     intensity: Yup.number().min(WORRY_LIMITS.intensityMin).max(WORRY_LIMITS.intensityMax).required(),
     control: Yup.mixed<WorryControl>().oneOf([...WORRY_CONTROLS]).required(),
     status: Yup.mixed<WorryStatus>().oneOf([...WORRY_STATUSES]).required(),
-    nextStep: Yup.string().max(WORRY_LIMITS.nextStepMaxLength),
+    firstActionItem: Yup.string().max(WORRY_LIMITS.actionItemMaxLength),
     reframe: Yup.string().max(WORRY_LIMITS.reframeMaxLength),
     notes: Yup.string().max(WORRY_LIMITS.notesMaxLength),
     tagsText: Yup.string().max(400),

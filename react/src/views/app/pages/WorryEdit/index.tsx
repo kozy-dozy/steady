@@ -11,6 +11,7 @@ import { apiListCategories } from '@/services/shared/CategoryService'
 import { apiDeleteWorry, apiGetWorry, apiUpdateWorry } from '@/services/shared/WorryService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
+import ActionItems from '../../components/ActionItems'
 import CategoryIcon from '../../components/CategoryIcon'
 import { Card, Chip, ErrorText, Page, Row, SectionTitle, Title } from '../../components/ui'
 import WorryForm from '../../components/WorryForm'
@@ -26,8 +27,12 @@ const Layout = styled.div`
     align-items: flex-start;
 `
 
-const Main = styled(Card)`
+const Main = styled.div`
     flex: 999 1 520px;
+    display: flex;
+    flex-direction: column;
+    gap: ${({ theme }) => theme.spacing.lg};
+    min-width: 0;
 `
 
 const Side = styled.div`
@@ -108,7 +113,10 @@ export default function WorryEdit() {
             .catch(() => setNotFound(true))
     }, [id])
 
-    const initialValues = useMemo(() => (worry ? toFormValues(worry) : null), [worry])
+    // Keyed on the id only: action items save on their own and update `worry`, and that must
+    // not reset unsaved edits in the form below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const initialValues = useMemo(() => (worry ? toFormValues(worry) : null), [worry?.id])
     const category = categories.find((c) => c.id === worry?.categoryId)
     // Archived categories stay selectable only for the entry that already uses them
     const pickable = categories.filter((c) => !c.isArchived || c.id === worry?.categoryId)
@@ -184,19 +192,22 @@ export default function WorryEdit() {
 
             <Layout>
                 <Main>
-                    <WorryForm
-                        variant="full"
-                        categories={pickable}
-                        initialValues={initialValues}
-                        submitLabel="Save changes"
-                        leftActions={
-                            <Button type="button" variant="plain" onClick={() => setConfirmDelete(true)}>
-                                Delete
-                            </Button>
-                        }
-                        onCancel={() => navigate('/')}
-                        onSubmit={save}
-                    />
+                    <ActionItems worry={worry} onChange={setWorry} />
+                    <Card>
+                        <WorryForm
+                            variant="full"
+                            categories={pickable}
+                            initialValues={initialValues}
+                            submitLabel="Save changes"
+                            leftActions={
+                                <Button type="button" variant="plain" onClick={() => setConfirmDelete(true)}>
+                                    Delete
+                                </Button>
+                            }
+                            onCancel={() => navigate('/')}
+                            onSubmit={save}
+                        />
+                    </Card>
                 </Main>
 
                 <Side>

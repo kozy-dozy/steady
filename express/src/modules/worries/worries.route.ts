@@ -4,13 +4,16 @@ import { requireAuth } from '../../middleware/requireAuth'
 import asyncHandler from '../../utils/asyncHandler'
 
 import {
+    addActionItem,
     createWorry,
+    deleteActionItem,
     deleteWorry,
     findDuplicateWorries,
     findSimilarWorries,
     getWorry,
     getWorrySummary,
     listWorries,
+    updateActionItem,
     updateWorry,
 } from './worries.controller'
 
@@ -28,5 +31,8 @@ router.get('/:id', asyncHandler(getWorry))
 router.post('/', asyncHandler(createWorry))
 router.patch('/:id', asyncHandler(updateWorry))
 router.delete('/:id', asyncHandler(deleteWorry))
+router.post('/:id/action-items', asyncHandler(addActionItem))
+router.patch('/:id/action-items/:itemId', asyncHandler(updateActionItem))
+router.delete('/:id/action-items/:itemId', asyncHandler(deleteActionItem))
 
 export default router

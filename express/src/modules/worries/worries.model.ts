@@ -1,9 +1,19 @@
 import mongoose, { Schema } from 'mongoose'
 
 /**
- * description, nextStep, reframe and notes are stored ENCRYPTED (utils/fieldCrypto).
+ * description, actionItems[].text, reframe and notes are stored ENCRYPTED (utils/fieldCrypto).
  * Never query or index them; decrypt only in toWorryDto.
+ * `nextStep` is legacy: migrateNextSteps() moves it into actionItems at boot.
  */
+const ActionItemSchema = new Schema(
+    {
+        text: { type: String, required: true },
+        done: { type: Boolean, default: false },
+        doneAt: { type: Date, default: null },
+    },
+    { timestamps: { createdAt: true, updatedAt: false } },
+)
+
 const WorrySchema = new Schema(
     {
         userId: { type: Schema.Types.ObjectId, ref: 'Member', required: true },
@@ -14,6 +24,7 @@ const WorrySchema = new Schema(
         intensity: { type: Number, required: true, min: 1, max: 10 },
         control: { type: String, enum: ['yes', 'partly', 'no'], default: 'partly' },
         status: { type: String, enum: ['active', 'improving', 'resolved'], default: 'active' },
+        actionItems: { type: [ActionItemSchema], default: [] },
         nextStep: { type: String, default: '' },
         reframe: { type: String, default: '' },
         notes: { type: String, default: '' },

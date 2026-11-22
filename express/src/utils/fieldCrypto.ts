@@ -2,7 +2,7 @@ import crypto from 'crypto'
 
 /**
  * Field-level encryption at rest (AES-256-GCM) for the private text on a worry:
- * description, nextStep, reframe, notes.
+ * description, actionItems[].text, reframe, notes.
  *
  * Stored format: `enc:v1:<iv>:<authTag>:<ciphertext>` (base64 parts).
  * Key: FIELD_ENCRYPTION_KEY = 64 hex chars (32 bytes). Generate with `openssl rand -hex 32`.

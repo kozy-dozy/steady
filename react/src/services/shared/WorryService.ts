@@ -1,6 +1,8 @@
 import ApiService from './ApiService'
 
 import type {
+    ActionItemCreateInput,
+    ActionItemPatchInput,
     WorryCreateInput,
     WorryDto,
     WorryDuplicatesResponse,
@@ -36,3 +38,13 @@ export const apiFindSimilarWorries = (data: WorrySimilarInput) =>
 
 export const apiFindDuplicateWorries = () =>
     ApiService.fetchData<WorryDuplicatesResponse>({ url: '/worries/duplicates', method: 'GET' })
+
+// Action items save one at a time (no form Save button). Each call returns the updated worry.
+export const apiAddActionItem = (worryId: string, data: ActionItemCreateInput) =>
+    ApiService.fetchData<{ worry: WorryDto }, ActionItemCreateInput>({ url: `/worries/${worryId}/action-items`, method: 'POST', data })
+
+export const apiUpdateActionItem = (worryId: string, itemId: string, data: ActionItemPatchInput) =>
+    ApiService.fetchData<{ worry: WorryDto }, ActionItemPatchInput>({ url: `/worries/${worryId}/action-items/${itemId}`, method: 'PATCH', data })
+
+export const apiDeleteActionItem = (worryId: string, itemId: string) =>
+    ApiService.fetchData<{ worry: WorryDto }>({ url: `/worries/${worryId}/action-items/${itemId}`, method: 'DELETE' })

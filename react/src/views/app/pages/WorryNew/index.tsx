@@ -13,7 +13,7 @@ import { Card, ErrorText, PageHead, Row, SectionTitle, Title } from '../../compo
 import WorryCard from '../../components/WorryCard'
 import WorryForm from '../../components/WorryForm'
 import { errorMessage, lastCategory, rememberCategory } from '../../utils/worry'
-import { emptyWorry, toInput, type WorryFormValues } from '../../utils/worryForm'
+import { emptyWorry, toCreateInput, type WorryFormValues } from '../../utils/worryForm'
 
 import type { CategoryDto, WorryMatchDto } from '@shared/dtos'
 
@@ -101,7 +101,7 @@ export default function WorryNew() {
         setSaveError('')
         setSaving(true)
         try {
-            await apiCreateWorry(toInput(values))
+            await apiCreateWorry(toCreateInput(values))
             rememberCategory(values.categoryId)
             setMatches([])
             setPending(null)

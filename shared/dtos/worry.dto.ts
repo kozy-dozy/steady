@@ -30,7 +30,9 @@ export type WorrySort = (typeof WORRY_SORTS)[number]
 
 export const WORRY_LIMITS = {
     descriptionMaxLength: 500,
-    nextStepMaxLength: 240,
+    actionItemMaxLength: 240,
+    /** Open (not done) action items allowed at once, so the list never feels like a pile. */
+    actionItemsOpenMax: 3,
     reframeMaxLength: 600,
     notesMaxLength: 2000,
     tagsMax: 10,
@@ -39,6 +41,16 @@ export const WORRY_LIMITS = {
     intensityMax: 10,
     pageSize: 20,
 } as const
+
+/** One small, concrete step for a worry. Text is encrypted at rest. */
+export interface ActionItemDto {
+    id: string
+    text: string
+    done: boolean
+    createdAt: string
+    /** '' while open. */
+    doneAt: string
+}
 
 export interface WorryDto {
     id: string
@@ -49,7 +61,8 @@ export interface WorryDto {
     intensity: number
     control: WorryControl
     status: WorryStatus
-    nextStep: string
+    /** Open items first (oldest first; the first one is "next"), then done items (newest first). */
+    actionItems: ActionItemDto[]
     reframe: string
     notes: string
     tags: string[]
@@ -67,13 +80,25 @@ export interface WorryCreateInput {
     intensity: number
     control?: WorryControl
     status?: WorryStatus
-    nextStep?: string
+    /** Quick add: optional first action item. More are added on the edit screen. */
+    firstActionItem?: string
     reframe?: string
     notes?: string
     tags?: string[]
 }
 
-export type WorryPatchInput = Partial<WorryCreateInput>
+/** Action items change through their own routes, not PATCH /api/worries/:id. */
+export type WorryPatchInput = Partial<Omit<WorryCreateInput, 'firstActionItem'>>
+
+/** POST /api/worries/:id/action-items */
+export interface ActionItemCreateInput {
+    text: string
+}
+
+/** PATCH /api/worries/:id/action-items/:itemId */
+export interface ActionItemPatchInput {
+    done: boolean
+}
 
 export interface WorryListQuery {
     categoryId?: string
