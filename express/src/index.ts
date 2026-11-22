@@ -13,6 +13,7 @@ import mongoose from 'mongoose'
 import { ONE_MONTH_MS } from './constants/time'
 import { adminRoutes } from './modules/admin'
 import { authRoutes } from './modules/auth'
+import { brightSpotsRoutes } from './modules/brightSpots'
 import { categoriesRoutes } from './modules/categories'
 import { membersRoutes } from './modules/members'
 import { statusRoutes } from './modules/status'
@@ -133,6 +134,7 @@ app.use('/api/admin', apiLimiter, adminRoutes)
 app.use('/api/members', apiLimiter, membersRoutes)
 app.use('/api/categories', apiLimiter, categoriesRoutes)
 app.use('/api/worries', apiLimiter, worriesRoutes)
+app.use('/api/bright-spots', apiLimiter, brightSpotsRoutes)
 app.use('/api', apiLimiter, statusRoutes)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.get('/api/sentry-test', () => {

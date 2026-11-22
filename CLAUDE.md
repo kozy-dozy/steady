@@ -4,7 +4,7 @@
 depression. Log a worry in under 10 seconds, sort it by category, mark it Active / Improving /
 Resolved, and add action items (up to 3 open at a time) and a reframe. **Private per member**: no public pages; anyone can
 sign up at `/sign-up` (email confirmation required) and sees only their own data. Screens: worry list (filters), quick add, edit entry,
-categories, account. A "Need help now?" 988 button is always visible. **Name, copy and sample
+Bright Spots, categories, account. A "Need help now?" 988 button is always visible. **Name, copy and sample
 entries are placeholders** (dummy data).
 
 Copied from `greenline-landscaping` (working tree, 2026-11-08; greenline has no git repo, so it was
@@ -46,7 +46,7 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
 - **Privacy first.** Every `/api/categories` and `/api/worries` route is `requireAuth` and every
   query is scoped by `req.userId`. Never return another user's rows, never log entry text.
 - **Worry text is encrypted at rest** (`utils/fieldCrypto.ts`, AES-256-GCM): `description`,
-  `actionItems[].text`, `reframe`, `notes`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
+  `actionItems[].text`, `reframe`, `notes`, and bright spot `text`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
   or index those fields. Express refuses to boot without `FIELD_ENCRYPTION_KEY` (64 hex). Changing
   or losing the key makes old entries unreadable.
 - **Express imports `@shared/dtos` with `import type` only.** Runtime constants come through
@@ -61,6 +61,11 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
   open per worry; `POST/PATCH/DELETE /api/worries/:id/action-items[/:itemId]` save one at a time
   (no form Save) and return the worry. Checking one off shows Undo for 6s. Quick add takes only
   `firstActionItem`. The old single `nextStep` is legacy: `migrateNextSteps()` moves it at boot.
+- **Bright Spots** (things going okay, the counterweight to worries): `/api/bright-spots`, text
+  encrypted, newest first. The fixed panel (`components/brightSpots/`) shows on `/` and
+  `/worries/*` only: right side on desktop (open by default, AppShell reserves its width), pill +
+  sheet on phone (closed by default). Show/hide is remembered per breakpoint in `localStorage`.
+  The name lives only in `CONTENT_CONFIG.brightSpots.title`.
 - `resolvedAt` is server-owned: set when status becomes `resolved`, cleared when reopened.
 - Categories live in Mongo per user (`ensureDefaultCategories`). "Other" (`isDefault`) can't be
   archived. Archive instead of delete so old entries keep their category.
@@ -96,7 +101,7 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 
 - Routes (`App.tsx`): `AuthLayout` (sign-in, sign-up, email-confirmed, forgot, reset) and, behind
   `ProtectedRoute`, `AppShell` (sidebar ≥1024px; header + bottom tabs + FAB on phone) with `/`,
-  `/worries/new`, `/worries/duplicates`, `/worries/:id`, `/categories`, `/account`.
+  `/worries/new`, `/worries/duplicates`, `/worries/:id`, `/bright-spots`, `/categories`, `/account`.
 - Screens live in `views/app/pages/*`; shared pieces in `views/app/components/*`
   (`WorryForm` has `quick` and `full` variants), helpers in `views/app/utils/*`.
 - Data via `services/shared/{Worry,Category}Service.ts` in `useEffect`; never fetch in components.
@@ -107,7 +112,7 @@ Buttons: pill, mixed case, flat. Touch targets ≥ 44px. App primitives:
 Module pattern: `modules/<feature>/{route,controller,model,index}.ts`, `asyncHandler`,
 `/summary`, `/duplicates`, `/similar` and `/reorder` declared before `/:id`.
 
-Modules: admin (counts only), auth (with `/signup`), **categories**, members, status, **worries**.
+Modules: admin (counts only), auth (with `/signup`), **brightSpots**, **categories**, members, status, **worries**.
 Removed from the base: contact, projects, quotes, services, siteContent, sitemap, testimonial, s3.
 
 ## Deploy

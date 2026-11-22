@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
 import {
+    BRIGHT_SPOT_LIMITS,
     CATEGORY_COLORS,
     CATEGORY_ICONS,
     CATEGORY_LIMITS,
@@ -188,4 +189,10 @@ export const worryListQuerySchema = Joi.object({
     control: Joi.string().valid(...WORRY_CONTROLS).allow(''),
     sort: Joi.string().valid(...WORRY_SORTS).allow(''),
     page: Joi.number().integer().min(1).max(10000),
+}).unknown(false)
+
+// ── Bright spots ───────────────────────────────────────────────────────────────
+
+export const brightSpotSchema = Joi.object({
+    text: Joi.string().trim().min(1).max(BRIGHT_SPOT_LIMITS.textMaxLength).required(),
 }).unknown(false)

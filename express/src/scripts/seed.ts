@@ -2,6 +2,7 @@ import '../env'
 
 import mongoose from 'mongoose'
 
+import { BrightSpot } from '../modules/brightSpots/brightSpots.model'
 import { Category } from '../modules/categories/categories.model'
 import { ensureDefaultCategories } from '../modules/categories/defaultCategories'
 import Member from '../modules/members/members.model'
@@ -9,10 +10,11 @@ import { actionItemsFrom } from '../modules/worries/actionItems'
 import { Worry } from '../modules/worries/worries.model'
 import { encryptField } from '../utils/fieldCrypto'
 
+import { SEED_BRIGHT_SPOTS } from './seed-data/brightSpots'
 import { SEED_WORRIES } from './seed-data/worries'
 
 /**
- * Seed placeholder worries for the owner account (the first admin).
+ * Seed placeholder worries and bright spots for the owner account (the first admin).
  *
  *   yarn workspace steady-express seed           # insert when nothing is seeded yet
  *   yarn workspace steady-express seed --force   # replace the seeded rows
@@ -23,6 +25,24 @@ import { SEED_WORRIES } from './seed-data/worries'
  */
 
 const DAY = 24 * 60 * 60 * 1000
+
+async function seedBrightSpots(userId: string, force: boolean) {
+    const already = await BrightSpot.countDocuments({ userId, seeded: true })
+    if (already > 0 && !force) {
+        console.log(`  bright spots: ${already} seeded row(s) exist, skipping`)
+        return
+    }
+    if (force) await BrightSpot.deleteMany({ userId, seeded: true })
+    const now = Date.now()
+    const rows = SEED_BRIGHT_SPOTS.map((b) => ({
+        userId,
+        text: encryptField(b.text),
+        createdAt: new Date(now - b.daysAgo * DAY),
+        seeded: true,
+    }))
+    await BrightSpot.insertMany(rows)
+    console.log(`  bright spots: inserted ${rows.length}`)
+}
 
 async function run() {
     const force = process.argv.includes('--force')
@@ -39,6 +59,8 @@ async function run() {
     await ensureDefaultCategories(userId)
     const categories = await Category.find({ userId }).lean()
     const bySlug = new Map(categories.map((c) => [c.slug, c._id]))
+
+    await seedBrightSpots(userId, force)
 
     const already = await Worry.countDocuments({ userId, seeded: true })
     if (already > 0 && !force) {

@@ -25,6 +25,14 @@ export const CONTENT_CONFIG = {
         savedBody: "It's on your list now. You don't have to carry it in your head.",
     },
 
+    /** The counterweight list. Name lives here only, so it is easy to rename. */
+    brightSpots: {
+        title: 'Bright Spots',
+        intro: 'Things that are going okay, big or small. They sit beside your worries, so the worry list never tells the whole story.',
+        empty: "Add one thing that's going okay, even a small one.",
+        placeholder: 'Something that went okay',
+    },
+
     resolved: {
         title: 'Nice work letting this one go.',
         body: 'Add a line to the notes about how it turned out.',

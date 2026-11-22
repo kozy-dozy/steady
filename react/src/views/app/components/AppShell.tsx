@@ -1,15 +1,18 @@
-import { LuLayoutGrid, LuList, LuLogOut, LuPlus, LuUser } from 'react-icons/lu'
-import { NavLink, Outlet } from 'react-router-dom'
+import { LuLayoutGrid, LuList, LuLogOut, LuPlus, LuSun, LuUser } from 'react-icons/lu'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import styled from 'styled-components'
 
 import Logo from '@/components/template/Logo'
 import { CONTENT_CONFIG } from '@/config/content.config'
 import useAuth from '@/utils/hooks/useAuth'
 
+import BrightSpotsPanel, { PANEL_GAP, PANEL_WIDTH } from './brightSpots/BrightSpotsPanel'
+import useBrightSpotsOpen from './brightSpots/useBrightSpotsOpen'
 import HelpCard, { HelpLink } from './HelpCard'
 
 const NAV = [
     { to: '/', label: 'Worries', icon: LuList, end: true },
+    { to: '/bright-spots', label: CONTENT_CONFIG.brightSpots.title, icon: LuSun, end: false },
     { to: '/categories', label: 'Categories', icon: LuLayoutGrid, end: false },
     { to: '/account', label: 'Account', icon: LuUser, end: false },
 ]
@@ -86,9 +89,17 @@ const SideFoot = styled.div`
     gap: ${({ theme }) => theme.spacing.sm};
 `
 
-const Main = styled.main`
+/** Pages that get the Bright Spots panel: the worry list and its sub-pages. */
+const showsBrightSpots = (path: string) => path === '/' || path.startsWith('/worries')
+
+const Main = styled.main<{ $reserve: boolean }>`
     flex: 1 1 auto;
     min-width: 0;
+
+    /* Room for the fixed desktop panel, so it never covers the page */
+    @media (min-width: 1024px) {
+        padding-right: ${({ $reserve }) => ($reserve ? `${PANEL_WIDTH + PANEL_GAP}px` : '0')};
+    }
 `
 
 const MobileHeader = styled.header`
@@ -166,6 +177,9 @@ const Fab = styled(NavLink)`
 
 export default function AppShell() {
     const { signOut } = useAuth()
+    const { pathname } = useLocation()
+    const brightSpots = useBrightSpotsOpen()
+    const withPanel = showsBrightSpots(pathname)
 
     return (
         <Frame>
@@ -188,7 +202,7 @@ export default function AppShell() {
                 </SideFoot>
             </Sidebar>
 
-            <Main>
+            <Main $reserve={withPanel && brightSpots.open && brightSpots.isDesktop}>
                 <MobileHeader>
                     <Logo />
                     <HelpLink href={CONTENT_CONFIG.help.callHref} aria-label="Need help now? Call 988">
@@ -201,6 +215,7 @@ export default function AppShell() {
             <Fab to="/worries/new" aria-label="Add a worry">
                 <LuPlus size={26} aria-hidden="true" />
             </Fab>
+            {withPanel && <BrightSpotsPanel open={brightSpots.open} onOpenChange={brightSpots.setOpen} />}
             <Tabs aria-label="Main">
                 {NAV.map(({ to, label, icon: Icon, end }) => (
                     <NavLink key={to} to={to} end={end}>
