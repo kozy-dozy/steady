@@ -1,7 +1,7 @@
 import { WORRY_CONTROLS, WORRY_LIMITS, WORRY_STATUSES, WORRY_TYPES } from '@shared/dtos'
 import * as Yup from 'yup'
 
-import { parseTags, typeFlags, worryType } from './worry'
+import { typeFlags, worryType } from './worry'
 
 import type { WorryControl, WorryCreateInput, WorryDto, WorryStatus, WorryType } from '@shared/dtos'
 
@@ -16,7 +16,6 @@ export interface WorryFormValues {
     firstActionItem: string
     reframe: string
     notes: string
-    tagsText: string
 }
 
 export const emptyWorry = (categoryId = ''): WorryFormValues => ({
@@ -29,7 +28,6 @@ export const emptyWorry = (categoryId = ''): WorryFormValues => ({
     firstActionItem: '',
     reframe: '',
     notes: '',
-    tagsText: '',
 })
 
 export const toFormValues = (w: WorryDto): WorryFormValues => ({
@@ -42,7 +40,6 @@ export const toFormValues = (w: WorryDto): WorryFormValues => ({
     firstActionItem: '',
     reframe: w.reframe,
     notes: w.notes,
-    tagsText: w.tags.join(', '),
 })
 
 export const toInput = (v: WorryFormValues): WorryCreateInput => ({
@@ -54,7 +51,6 @@ export const toInput = (v: WorryFormValues): WorryCreateInput => ({
     status: v.status,
     reframe: v.reframe.trim(),
     notes: v.notes.trim(),
-    tags: parseTags(v.tagsText),
 })
 
 /** Create body: adds the optional first action item. */
@@ -70,5 +66,4 @@ export const worrySchema = Yup.object({
     firstActionItem: Yup.string().max(WORRY_LIMITS.actionItemMaxLength),
     reframe: Yup.string().max(WORRY_LIMITS.reframeMaxLength),
     notes: Yup.string().max(WORRY_LIMITS.notesMaxLength),
-    tagsText: Yup.string().max(400),
 })

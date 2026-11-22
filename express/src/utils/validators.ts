@@ -152,7 +152,6 @@ const worryFields = {
     status: Joi.string().valid(...WORRY_STATUSES),
     reframe: Joi.string().trim().allow('').max(WORRY_LIMITS.reframeMaxLength),
     notes: Joi.string().trim().allow('').max(WORRY_LIMITS.notesMaxLength),
-    tags: Joi.array().items(Joi.string().trim().max(WORRY_LIMITS.tagMaxLength)).max(WORRY_LIMITS.tagsMax),
 }
 
 export const worrySchemas = {

@@ -66,7 +66,6 @@ async function run() {
             actionItems: actionItemsFrom(w.nextStep),
             reframe: encryptField(w.reframe),
             notes: encryptField(w.notes),
-            tags: w.tags,
             resolvedAt: w.resolvedDaysAgo !== undefined ? new Date(now - w.resolvedDaysAgo * DAY) : null,
             createdAt,
             seeded: true,

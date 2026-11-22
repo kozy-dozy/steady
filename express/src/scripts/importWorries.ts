@@ -42,7 +42,6 @@ type ImportRow = {
     nextStep?: string
     reframe?: string
     notes?: string
-    tags?: string[]
 }
 
 const norm = (s: string) => s.trim().toLowerCase()
@@ -115,7 +114,6 @@ async function run() {
                 actionItems: actionItemsFrom(row.nextStep),
                 reframe: encryptField(row.reframe?.trim() ?? ''),
                 notes: encryptField(row.notes?.trim() ?? ''),
-                tags: (row.tags ?? []).map(norm).filter(Boolean).slice(0, WORRY_LIMITS.tagsMax),
                 resolvedAt: status === 'resolved' ? new Date() : null,
                 seeded: false,
             })

@@ -48,7 +48,7 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
 - **Worry text is encrypted at rest** (`utils/fieldCrypto.ts`, AES-256-GCM): `description`,
   `actionItems[].text`, `reframe`, `notes`. Encrypt on write, decrypt only in `toWorryDto`. Never query, sort
   or index those fields. Express refuses to boot without `FIELD_ENCRYPTION_KEY` (64 hex). Changing
-  or losing the key makes old entries unreadable. Tags are plain text (kept filterable).
+  or losing the key makes old entries unreadable.
 - **Express imports `@shared/dtos` with `import type` only.** Runtime constants come through
   `express/src/utils/domainConstants.ts` with a relative import.
 - **POST/PATCH bodies and list queries use `validateStrict` + Joi** (`utils/validators.ts`).

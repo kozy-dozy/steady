@@ -50,7 +50,6 @@ export function toWorryDto(doc: any): WorryDto {
         actionItems: toActionItemDtos(doc.actionItems),
         reframe: decryptField(doc.reframe),
         notes: decryptField(doc.notes),
-        tags: Array.isArray(doc.tags) ? doc.tags : [],
         createdAt: toIso(doc.createdAt),
         updatedAt: toIso(doc.updatedAt),
         resolvedAt: toIso(doc.resolvedAt),
@@ -62,9 +61,6 @@ function encryptBody<T extends Partial<WorryCreateInput>>(body: T): T {
     const out: Record<string, unknown> = { ...body }
     for (const key of ENCRYPTED) {
         if (typeof out[key] === 'string') out[key] = encryptField(out[key] as string)
-    }
-    if (Array.isArray(out.tags)) {
-        out.tags = Array.from(new Set((out.tags as string[]).map((t) => t.trim().toLowerCase()).filter(Boolean)))
     }
     return out as T
 }

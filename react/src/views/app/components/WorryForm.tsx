@@ -157,7 +157,7 @@ function ControlPicker() {
     )
 }
 
-function TextBox({ name, label, placeholder, multiline, as: Wrap = Field }: { name: 'description' | 'firstActionItem' | 'reframe' | 'notes' | 'tagsText'; label: string; placeholder?: string; multiline?: boolean; as?: typeof Field }) {
+function TextBox({ name, label, placeholder, multiline, as: Wrap = Field }: { name: 'description' | 'firstActionItem' | 'reframe' | 'notes'; label: string; placeholder?: string; multiline?: boolean; as?: typeof Field }) {
     const { values, handleChange, handleBlur, errors, touched } = useFormikContext<WorryFormValues>()
     const error = touched[name] ? errors[name] : undefined
     return (
@@ -225,7 +225,6 @@ export default function WorryForm({ initialValues, categories, variant, submitLa
                                 {quick && <TextBox name="firstActionItem" label="First action item" placeholder="One small, concrete step" />}
                                 <TextBox multiline as={Reframe} label="A more balanced thought" name="reframe" placeholder="What would I tell a friend?" />
                                 <TextBox multiline label="Notes" name="notes" />
-                                <TextBox name="tagsText" label="Tags" placeholder="sleep, budget" />
                             </Details>
                         )}
 

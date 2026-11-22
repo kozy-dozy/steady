@@ -28,7 +28,6 @@ const WorrySchema = new Schema(
         nextStep: { type: String, default: '' },
         reframe: { type: String, default: '' },
         notes: { type: String, default: '' },
-        tags: { type: [String], default: [] },
         resolvedAt: { type: Date, default: null },
         seeded: { type: Boolean, default: false },
     },

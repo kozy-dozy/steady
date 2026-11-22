@@ -20,10 +20,6 @@ export const longDate = (iso: string) => (iso ? dayjs(iso).format('MMM D, h:mm a
 
 export const todayLabel = () => dayjs().format('dddd, MMMM D')
 
-/** "#sleep, budget review" → ['sleep', 'budget', 'review'] */
-export const parseTags = (text: string) =>
-    Array.from(new Set(text.split(/[\s,]+/).map((t) => t.replace(/^#/, '').trim().toLowerCase()).filter(Boolean))).slice(0, 10)
-
 export const LAST_CATEGORY_KEY = 'steady.lastCategoryId'
 
 export function rememberCategory(id: string) {

@@ -35,8 +35,6 @@ export const WORRY_LIMITS = {
     actionItemsOpenMax: 3,
     reframeMaxLength: 600,
     notesMaxLength: 2000,
-    tagsMax: 10,
-    tagMaxLength: 30,
     intensityMin: 1,
     intensityMax: 10,
     pageSize: 20,
@@ -65,7 +63,6 @@ export interface WorryDto {
     actionItems: ActionItemDto[]
     reframe: string
     notes: string
-    tags: string[]
     createdAt: string
     updatedAt: string
     /** '' until the status first becomes resolved; cleared if it is reopened. */
@@ -84,7 +81,6 @@ export interface WorryCreateInput {
     firstActionItem?: string
     reframe?: string
     notes?: string
-    tags?: string[]
 }
 
 /** Action items change through their own routes, not PATCH /api/worries/:id. */
