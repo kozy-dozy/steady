@@ -28,8 +28,8 @@ export const CONTENT_CONFIG = {
     /** The counterweight list. Name lives here only, so it is easy to rename. */
     brightSpots: {
         title: 'Bright Spots',
-        intro: 'Things that are going okay, big or small. They sit beside your worries, so the worry list never tells the whole story.',
-        empty: "Add one thing that's going okay, even a small one.",
+        intro: 'The people, comforts, and good moments in your life, big or small. They sit beside your worries, so the worry list never tells the whole story.',
+        empty: 'Start with one: a person you love, a small comfort like your morning coffee, or a good moment.',
         placeholder: 'Something that went okay',
     },
 
