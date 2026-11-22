@@ -215,7 +215,7 @@ export default function AppShell() {
             <Fab to="/worries/new" aria-label="Add a worry">
                 <LuPlus size={26} aria-hidden="true" />
             </Fab>
-            {withPanel && <BrightSpotsPanel open={brightSpots.open} onOpenChange={brightSpots.setOpen} />}
+            {withPanel && <BrightSpotsPanel open={brightSpots.open} showPhotos={brightSpots.isDesktop} onOpenChange={brightSpots.setOpen} />}
             <Tabs aria-label="Main">
                 {NAV.map(({ to, label, icon: Icon, end }) => (
                     <NavLink key={to} to={to} end={end}>

@@ -1,6 +1,7 @@
 import Joi from 'joi'
 
 import {
+    BRIGHT_SPOT_IMAGE_TYPES,
     BRIGHT_SPOT_LIMITS,
     CATEGORY_COLORS,
     CATEGORY_ICONS,
@@ -195,4 +196,12 @@ export const worryListQuerySchema = Joi.object({
 
 export const brightSpotSchema = Joi.object({
     text: Joi.string().trim().min(1).max(BRIGHT_SPOT_LIMITS.textMaxLength).required(),
+}).unknown(false)
+
+export const brightSpotImageSchema = Joi.object({
+    mime: Joi.string().valid(...BRIGHT_SPOT_IMAGE_TYPES).required(),
+    // base64 grows bytes by 4/3
+    data: Joi.string().base64().max(Math.ceil((BRIGHT_SPOT_LIMITS.imageMaxBytes * 4) / 3) + 4).required(),
+    width: Joi.number().integer().min(1).max(BRIGHT_SPOT_LIMITS.imageMaxSide).required(),
+    height: Joi.number().integer().min(1).max(BRIGHT_SPOT_LIMITS.imageMaxSide).required(),
 }).unknown(false)

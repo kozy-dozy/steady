@@ -10,6 +10,7 @@ import { apiCreateBrightSpot, apiListBrightSpots } from '@/services/shared/Brigh
 import { errorMessage } from '../../utils/worry'
 import { ErrorText, PillButton, TextInput } from '../ui'
 
+import BrightSpotPhoto from './BrightSpotPhoto'
 import { SAND_LIGHT } from './sand'
 
 import type { BrightSpotDto } from '@shared/dtos'
@@ -101,6 +102,9 @@ const Scroll = styled.ul`
     padding: 4px 16px;
 
     li {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         padding: 10px 0;
         border-bottom: 1px solid ${({ theme }) => theme.colors.accentGold};
         overflow-wrap: anywhere;
@@ -178,10 +182,12 @@ const Opener = styled.button`
 type Props = {
     open: boolean
     onOpenChange: (open: boolean) => void
+    /** Photos show on desktop only; on a phone they aren't even loaded. */
+    showPhotos: boolean
 }
 
 /** The always-there counterweight on the worry pages. All items, newest first; the list scrolls. */
-export default function BrightSpotsPanel({ open, onOpenChange }: Props) {
+export default function BrightSpotsPanel({ open, onOpenChange, showPhotos }: Props) {
     const [spots, setSpots] = useState<BrightSpotDto[] | null>(null)
     const [adding, setAdding] = useState(false)
     const [text, setText] = useState('')
@@ -256,7 +262,10 @@ export default function BrightSpotsPanel({ open, onOpenChange }: Props) {
             ) : (
                 <Scroll aria-label={COPY.title}>
                     {(spots ?? []).map((s) => (
-                        <li key={s.id}>{s.text}</li>
+                        <li key={s.id}>
+                            {showPhotos && <BrightSpotPhoto spot={s} variant="panel" />}
+                            <span>{s.text}</span>
+                        </li>
                     ))}
                 </Scroll>
             )}

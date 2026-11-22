@@ -3,7 +3,7 @@
  * Express may only `import type` from '@shared/dtos' (the alias doesn't exist in compiled JS),
  * so runtime values come through here with a RELATIVE import.
  */
-export { BRIGHT_SPOT_LIMITS } from '../../../shared/dtos/brightSpot.dto'
+export { BRIGHT_SPOT_IMAGE_TYPES, BRIGHT_SPOT_LIMITS } from '../../../shared/dtos/brightSpot.dto'
 export { CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LIMITS } from '../../../shared/dtos/category.dto'
 export {
     WORRY_CONTROLS,

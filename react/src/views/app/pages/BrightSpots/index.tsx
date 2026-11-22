@@ -1,23 +1,29 @@
 import { BRIGHT_SPOT_LIMITS } from '@shared/dtos'
-import { useEffect, useState } from 'react'
-import { LuPencil, LuSun, LuTrash2 } from 'react-icons/lu'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { LuCamera, LuImagePlus, LuPencil, LuSun, LuTrash2, LuX } from 'react-icons/lu'
 import styled from 'styled-components'
 
 import { CONTENT_CONFIG } from '@/config/content.config'
 import {
     apiCreateBrightSpot,
     apiDeleteBrightSpot,
+    apiDeleteBrightSpotImage,
     apiListBrightSpots,
+    apiPutBrightSpotImage,
     apiUpdateBrightSpot,
 } from '@/services/shared/BrightSpotService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
+import BrightSpotPhoto from '../../components/brightSpots/BrightSpotPhoto'
+import { ImageError, prepareImage } from '../../components/brightSpots/prepareImage'
 import { SAND_LIGHT } from '../../components/brightSpots/sand'
+import { forgetBrightSpotImage, rememberBrightSpotImage } from '../../components/brightSpots/useBrightSpotImage'
 import { Card, ErrorText, Muted, Page, PillButton, Row, TextInput, Title } from '../../components/ui'
 import { errorMessage, longDate } from '../../utils/worry'
 
 import type { BrightSpotDto } from '@shared/dtos'
-import type { FormEvent } from 'react'
+import type { BrightSpotImageInput } from '@shared/dtos'
+import type { ChangeEvent, FormEvent } from 'react'
 
 const COPY = CONTENT_CONFIG.brightSpots
 
@@ -88,11 +94,66 @@ const IconButton = styled.button`
     }
 `
 
+const HiddenFile = styled.input.attrs({ type: 'file', accept: 'image/*' })`
+    display: none;
+`
+
+const Preview = styled.div`
+    display: flex;
+    align-items: center;
+    gap: ${({ theme }) => theme.spacing.sm};
+
+    img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: ${({ theme }) => theme.radius.md};
+    }
+`
+
+const photoError = (err: unknown) => (err instanceof ImageError ? err.message : errorMessage(err, 'The photo could not be saved. Please try again.'))
+
+/** Upload a prepared photo and prime the cache so it shows right away. */
+async function uploadPhoto(spotId: string, photo: BrightSpotImageInput) {
+    const res = await apiPutBrightSpotImage(spotId, photo)
+    rememberBrightSpotImage(res.brightSpot, `data:${photo.mime};base64,${photo.data}`)
+    return res.brightSpot
+}
+
 function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (s: BrightSpotDto) => void; onDeleted: (id: string) => void }) {
     const [mode, setMode] = useState<'view' | 'edit' | 'confirm'>('view')
     const [text, setText] = useState(spot.text)
     const [error, setError] = useState('')
     const [busy, setBusy] = useState(false)
+    const fileRef = useRef<HTMLInputElement>(null)
+
+    const pickPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        e.target.value = ''
+        if (!file) return
+        setBusy(true)
+        setError('')
+        try {
+            onSaved(await uploadPhoto(spot.id, await prepareImage(file)))
+        } catch (err) {
+            setError(photoError(err))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    const removePhoto = async () => {
+        setBusy(true)
+        try {
+            const res = await apiDeleteBrightSpotImage(spot.id)
+            forgetBrightSpotImage(spot.id)
+            onSaved(res.brightSpot)
+        } catch (err) {
+            setError(errorMessage(err, 'Could not remove the photo. Please try again.'))
+        } finally {
+            setBusy(false)
+        }
+    }
 
     const save = async (e: FormEvent) => {
         e.preventDefault()
@@ -118,6 +179,7 @@ function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (
         setBusy(true)
         try {
             await apiDeleteBrightSpot(spot.id)
+            forgetBrightSpotImage(spot.id)
             onDeleted(spot.id)
         } catch (err) {
             setError(errorMessage(err, 'Could not delete. Please try again.'))
@@ -152,6 +214,13 @@ function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (
                         Cancel
                     </PillButton>
                 </AddRow>
+                {spot.image && (
+                    <div>
+                        <PillButton type="button" disabled={busy} onClick={removePhoto}>
+                            Remove photo
+                        </PillButton>
+                    </div>
+                )}
                 {error && <ErrorText role="alert">{error}</ErrorText>}
             </Item>
         )
@@ -159,6 +228,7 @@ function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (
 
     return (
         <Item>
+            <BrightSpotPhoto spot={spot} variant="thumb" />
             <Text>
                 <span>{spot.text}</span>
                 <small>{longDate(spot.createdAt)}</small>
@@ -175,6 +245,15 @@ function SpotRow({ spot, onSaved, onDeleted }: { spot: BrightSpotDto; onSaved: (
                 </Row>
             ) : (
                 <>
+                    <HiddenFile ref={fileRef} tabIndex={-1} aria-hidden="true" onChange={pickPhoto} />
+                    <IconButton
+                        type="button"
+                        aria-label={`${spot.image ? 'Change' : 'Add'} photo: ${spot.text}`}
+                        disabled={busy}
+                        onClick={() => fileRef.current?.click()}
+                    >
+                        <LuCamera aria-hidden="true" size={18} />
+                    </IconButton>
                     <IconButton type="button" aria-label={`Edit: ${spot.text}`} onClick={() => setMode('edit')}>
                         <LuPencil aria-hidden="true" size={18} />
                     </IconButton>
@@ -193,6 +272,10 @@ export default function BrightSpots() {
     const [text, setText] = useState('')
     const [error, setError] = useState('')
     const [busy, setBusy] = useState(false)
+    const [photo, setPhoto] = useState<File | null>(null)
+    const fileRef = useRef<HTMLInputElement>(null)
+    const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : ''), [photo])
+    useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview])
 
     useEffect(() => {
         apiListBrightSpots()
@@ -209,10 +292,27 @@ export default function BrightSpots() {
         }
         setBusy(true)
         setError('')
+        // Prepare the photo first, so a bad file stops here before anything is saved
+        let prepared: BrightSpotImageInput | null = null
         try {
-            const res = await apiCreateBrightSpot({ text: value })
-            setSpots((s) => [res.brightSpot, ...(s ?? [])])
+            prepared = photo ? await prepareImage(photo) : null
+        } catch (err) {
+            setError(photoError(err))
+            setBusy(false)
+            return
+        }
+        try {
+            let spot = (await apiCreateBrightSpot({ text: value })).brightSpot
             setText('')
+            setPhoto(null)
+            if (prepared) {
+                try {
+                    spot = await uploadPhoto(spot.id, prepared)
+                } catch (err) {
+                    setError(`Saved, but the photo didn't upload: ${photoError(err)} Use the camera button to try again.`)
+                }
+            }
+            setSpots((s) => [spot, ...(s ?? [])])
         } catch (err) {
             setError(errorMessage(err, 'Could not save. Please try again.'))
         } finally {
@@ -243,9 +343,37 @@ export default function BrightSpots() {
                         }}
                     />
                     <PillButton $on type="submit" disabled={busy}>
-                        Add
+                        {busy ? 'Saving…' : 'Add'}
                     </PillButton>
                 </AddRow>
+                <HiddenFile
+                    ref={fileRef}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    onChange={(e) => {
+                        setPhoto(e.target.files?.[0] ?? null)
+                        e.target.value = ''
+                        setError('')
+                    }}
+                />
+                {photo ? (
+                    <Preview>
+                        <img alt="Selected photo" src={preview} />
+                        <PillButton type="button" onClick={() => setPhoto(null)}>
+                            <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                                <LuX aria-hidden="true" size={16} /> Remove photo
+                            </span>
+                        </PillButton>
+                    </Preview>
+                ) : (
+                    <div>
+                        <PillButton type="button" onClick={() => fileRef.current?.click()}>
+                            <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                                <LuImagePlus aria-hidden="true" size={16} /> Add a photo (optional)
+                            </span>
+                        </PillButton>
+                    </div>
+                )}
                 {error && <ErrorText role="alert">{error}</ErrorText>}
             </AddCard>
 

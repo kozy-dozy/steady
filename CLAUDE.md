@@ -66,6 +66,11 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
   `/worries/*` only: right side on desktop (open by default, AppShell reserves its width), pill +
   sheet on phone (closed by default). Show/hide is remembered per breakpoint in `localStorage`.
   The name lives only in `CONTENT_CONFIG.brightSpots.title`.
+- **Bright spot photos** (optional, one each): resized in the browser (`prepareImage.ts`, JPEG, long
+  side 1400px, ≤ 700KB so the base64 fits the 1mb JSON limit), stored **encrypted** in
+  `brightSpotImages`, served only to the owner as base64 JSON from `GET /api/bright-spots/:id/image`
+  (no public URL, `no-store`). Cached in memory only. Shown in the desktop panel (click to enlarge)
+  and as thumbnails on the page; never loaded on phone in the panel.
 - `resolvedAt` is server-owned: set when status becomes `resolved`, cleared when reopened.
 - Categories live in Mongo per user (`ensureDefaultCategories`). "Other" (`isDefault`) can't be
   archived. Archive instead of delete so old entries keep their category.
