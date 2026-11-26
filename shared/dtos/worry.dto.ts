@@ -33,6 +33,8 @@ export const WORRY_LIMITS = {
     actionItemMaxLength: 240,
     /** Open (not done) action items allowed at once, so the list never feels like a pile. */
     actionItemsOpenMax: 3,
+    /** Open worries in Focus at once. The rest are Parked, so the list never shows everything at once. */
+    focusMax: 3,
     reframeMaxLength: 600,
     notesMaxLength: 2000,
     intensityMin: 1,
@@ -59,6 +61,8 @@ export interface WorryDto {
     intensity: number
     control: WorryControl
     status: WorryStatus
+    /** In Focus (at most WORRY_LIMITS.focusMax). False = Parked. Resolving a worry clears it. */
+    focus: boolean
     /** Open items first (oldest first; the first one is "next"), then done items (newest first). */
     actionItems: ActionItemDto[]
     reframe: string
@@ -86,6 +90,17 @@ export interface WorryCreateInput {
 /** Action items change through their own routes, not PATCH /api/worries/:id. */
 export type WorryPatchInput = Partial<Omit<WorryCreateInput, 'firstActionItem'>>
 
+/** PATCH /api/worries/:id/focus */
+export interface WorryFocusInput {
+    focus: boolean
+}
+
+/** GET /api/worries/focus: open focused worries, oldest focus first. */
+export interface WorryFocusResponse {
+    worries: WorryDto[]
+    max: number
+}
+
 /** POST /api/worries/:id/action-items */
 export interface ActionItemCreateInput {
     text: string
@@ -103,6 +118,8 @@ export interface WorryListQuery {
     /** Comma-separated statuses, e.g. "active,improving". Omit for all. */
     status?: string
     control?: WorryControl
+    /** 'no' = Parked only (the lower list on the main page). Omit for all. */
+    focus?: 'yes' | 'no'
     sort?: WorrySort
     page?: number
 }

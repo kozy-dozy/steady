@@ -171,6 +171,8 @@ export const worrySchemas = {
     patch: Joi.object(worryFields).min(1).unknown(false),
 }
 
+export const worryFocusSchema = Joi.object({ focus: Joi.boolean().required() }).unknown(false)
+
 export const actionItemSchemas = {
     create: Joi.object({
         text: Joi.string().trim().min(1).max(WORRY_LIMITS.actionItemMaxLength).required(),
@@ -188,6 +190,7 @@ export const worryListQuerySchema = Joi.object({
     type: Joi.string().valid(...WORRY_TYPES).allow(''),
     status: Joi.string().trim().allow('').max(60),
     control: Joi.string().valid(...WORRY_CONTROLS).allow(''),
+    focus: Joi.string().valid('yes', 'no').allow(''),
     sort: Joi.string().valid(...WORRY_SORTS).allow(''),
     page: Joi.number().integer().min(1).max(10000),
 }).unknown(false)

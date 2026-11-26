@@ -93,6 +93,11 @@ async function run() {
             seeded: true,
         }
     })
+    // Two open placeholders start in Focus so the main page shows both sections
+    rows.filter((r) => r.status !== 'resolved').slice(0, 2).forEach((r: Record<string, unknown>, i) => {
+        r.focus = true
+        r.focusedAt = new Date(now - (2 - i) * 60 * 1000)
+    })
     // Mongoose keeps a createdAt that is already set, so the dates stay spread out
     const inserted = await Worry.insertMany(rows)
     console.log(`  worries: inserted ${inserted.length} for ${owner.email}`)

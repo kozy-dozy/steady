@@ -24,6 +24,9 @@ const WorrySchema = new Schema(
         intensity: { type: Number, required: true, min: 1, max: 10 },
         control: { type: String, enum: ['yes', 'partly', 'no'], default: 'partly' },
         status: { type: String, enum: ['active', 'improving', 'resolved'], default: 'active' },
+        /** In Focus (max WORRY_LIMITS.focusMax open per user); false = Parked. */
+        focus: { type: Boolean, default: false },
+        focusedAt: { type: Date, default: null },
         actionItems: { type: [ActionItemSchema], default: [] },
         nextStep: { type: String, default: '' },
         reframe: { type: String, default: '' },
@@ -36,5 +39,6 @@ const WorrySchema = new Schema(
 
 WorrySchema.index({ userId: 1, status: 1, createdAt: -1 })
 WorrySchema.index({ userId: 1, categoryId: 1 })
+WorrySchema.index({ userId: 1, focus: 1, status: 1 })
 
 export const Worry = mongoose.model('Worry', WorrySchema, 'worries')

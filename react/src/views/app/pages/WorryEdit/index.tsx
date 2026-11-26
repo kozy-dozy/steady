@@ -2,18 +2,18 @@ import Button from '@kozy-dozy/ui/Button'
 import Dialog from '@kozy-dozy/ui/Dialog'
 import { WORRY_STATUS_LABELS, WORRY_STATUSES } from '@shared/dtos'
 import { useEffect, useMemo, useState } from 'react'
-import { LuArrowLeft } from 'react-icons/lu'
+import { LuArrowLeft, LuTarget } from 'react-icons/lu'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { CONTENT_CONFIG } from '@/config/content.config'
 import { apiListCategories } from '@/services/shared/CategoryService'
-import { apiDeleteWorry, apiGetWorry, apiUpdateWorry } from '@/services/shared/WorryService'
+import { apiDeleteWorry, apiGetWorry, apiSetWorryFocus, apiUpdateWorry } from '@/services/shared/WorryService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
 import ActionItems from '../../components/ActionItems'
 import CategoryIcon from '../../components/CategoryIcon'
-import { Card, Chip, ErrorText, Page, Row, SectionTitle, Title } from '../../components/ui'
+import { Card, Chip, ErrorText, Muted, Page, PillButton, Row, SectionTitle, Title } from '../../components/ui'
 import WorryForm from '../../components/WorryForm'
 import { errorMessage, longDate } from '../../utils/worry'
 import { toFormValues, toInput, type WorryFormValues } from '../../utils/worryForm'
@@ -103,6 +103,8 @@ export default function WorryEdit() {
     const [error, setError] = useState('')
     const [saving, setSaving] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
+    // True right after a Focus worry is resolved, to say its spot is open
+    const [slotOpened, setSlotOpened] = useState(false)
 
     useEffect(() => {
         Promise.all([apiGetWorry(id), apiListCategories(true)])
@@ -137,10 +139,27 @@ export default function WorryEdit() {
         setSaving(true)
         setError('')
         try {
+            const wasFocus = worry.focus
             const res = await apiUpdateWorry(id, { status })
             setWorry(res.worry)
+            setSlotOpened(wasFocus && !res.worry.focus)
         } catch (err) {
             setError(errorMessage(err))
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const toggleFocus = async () => {
+        if (!worry) return
+        setSaving(true)
+        setError('')
+        try {
+            const res = await apiSetWorryFocus(id, !worry.focus)
+            setWorry(res.worry)
+            setSlotOpened(false)
+        } catch (err) {
+            setError(errorMessage(err, 'Could not change Focus. Please try again.'))
         } finally {
             setSaving(false)
         }
@@ -232,9 +251,32 @@ export default function WorryEdit() {
                             <Kudos>
                                 <strong>{CONTENT_CONFIG.resolved.title}</strong>
                                 <span>{CONTENT_CONFIG.resolved.body}</span>
+                                {slotOpened && (
+                                    <span>
+                                        {CONTENT_CONFIG.focus.slotOpened} <Link to="/">Go to your list</Link>
+                                    </span>
+                                )}
                             </Kudos>
                         )}
                     </Card>
+                    {worry.status !== 'resolved' && (
+                        <Card>
+                            <SectionTitle style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <LuTarget aria-hidden="true" size={20} />
+                                {worry.focus ? 'In Focus' : 'Parked'}
+                            </SectionTitle>
+                            <Muted>
+                                {worry.focus
+                                    ? 'One of the few you are working on now.'
+                                    : "Written down and waiting. Bring it into Focus when you're ready."}
+                            </Muted>
+                            <div>
+                                <PillButton type="button" $on={!worry.focus} disabled={saving} onClick={toggleFocus}>
+                                    {worry.focus ? 'Move to Parked' : 'Focus on this'}
+                                </PillButton>
+                            </div>
+                        </Card>
+                    )}
                     <Card>
                         <Meta><span>Created</span><span>{longDate(worry.createdAt)}</span></Meta>
                         <Meta><span>Updated</span><span>{longDate(worry.updatedAt)}</span></Meta>

@@ -12,7 +12,9 @@ import {
     findSimilarWorries,
     getWorry,
     getWorrySummary,
+    listFocusWorries,
     listWorries,
+    setWorryFocus,
     updateActionItem,
     updateWorry,
 } from './worries.controller'
@@ -25,12 +27,14 @@ router.use(requireAuth)
 router.get('/', asyncHandler(listWorries))
 // Declared before `/:id` so "summary" / "duplicates" are never read as an id
 router.get('/summary', asyncHandler(getWorrySummary))
+router.get('/focus', asyncHandler(listFocusWorries))
 router.get('/duplicates', asyncHandler(findDuplicateWorries))
 router.post('/similar', asyncHandler(findSimilarWorries))
 router.get('/:id', asyncHandler(getWorry))
 router.post('/', asyncHandler(createWorry))
 router.patch('/:id', asyncHandler(updateWorry))
 router.delete('/:id', asyncHandler(deleteWorry))
+router.patch('/:id/focus', asyncHandler(setWorryFocus))
 router.post('/:id/action-items', asyncHandler(addActionItem))
 router.patch('/:id/action-items/:itemId', asyncHandler(updateActionItem))
 router.delete('/:id/action-items/:itemId', asyncHandler(deleteActionItem))

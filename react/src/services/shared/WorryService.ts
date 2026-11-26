@@ -6,6 +6,8 @@ import type {
     WorryCreateInput,
     WorryDto,
     WorryDuplicatesResponse,
+    WorryFocusInput,
+    WorryFocusResponse,
     WorryListQuery,
     WorryListResponse,
     WorryPatchInput,
@@ -48,3 +50,10 @@ export const apiUpdateActionItem = (worryId: string, itemId: string, data: Actio
 
 export const apiDeleteActionItem = (worryId: string, itemId: string) =>
     ApiService.fetchData<{ worry: WorryDto }>({ url: `/worries/${worryId}/action-items/${itemId}`, method: 'DELETE' })
+
+/** Open worries in Focus (at most WORRY_LIMITS.focusMax), oldest focus first. */
+export const apiListFocusWorries = () => ApiService.fetchData<WorryFocusResponse>({ url: '/worries/focus', method: 'GET' })
+
+/** Move a worry into Focus (409 when full) or back to Parked. */
+export const apiSetWorryFocus = (id: string, focus: boolean) =>
+    ApiService.fetchData<{ worry: WorryDto }, WorryFocusInput>({ url: `/worries/${id}/focus`, method: 'PATCH', data: { focus } })

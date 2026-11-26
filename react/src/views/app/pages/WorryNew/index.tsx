@@ -1,12 +1,12 @@
 import Button from '@kozy-dozy/ui/Button'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LuCheck } from 'react-icons/lu'
+import { LuCheck, LuTarget } from 'react-icons/lu'
 import { Link, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
 import { CONTENT_CONFIG } from '@/config/content.config'
 import { apiListCategories } from '@/services/shared/CategoryService'
-import { apiCreateWorry, apiFindSimilarWorries } from '@/services/shared/WorryService'
+import { apiCreateWorry, apiFindSimilarWorries, apiListFocusWorries, apiSetWorryFocus } from '@/services/shared/WorryService'
 import { ErrorState, LoadingState } from '@/views/ecom/components/States'
 
 import { Card, ErrorText, PageHead, Row, SectionTitle, Title } from '../../components/ui'
@@ -73,6 +73,10 @@ export default function WorryNew() {
     const [matches, setMatches] = useState<WorryMatchDto[]>([])
     const [pending, setPending] = useState<WorryFormValues | null>(null)
     const [saving, setSaving] = useState(false)
+    // The new worry (Parked), and whether a Focus spot is open for it
+    const [createdId, setCreatedId] = useState('')
+    const [canFocus, setCanFocus] = useState(false)
+    const [focusBusy, setFocusBusy] = useState(false)
     const matchesRef = useRef<HTMLDivElement>(null)
     const byId = useMemo(() => new Map((categories ?? []).map((c) => [c.id, c])), [categories])
 
@@ -101,7 +105,13 @@ export default function WorryNew() {
         setSaveError('')
         setSaving(true)
         try {
-            await apiCreateWorry(toCreateInput(values))
+            const res = await apiCreateWorry(toCreateInput(values))
+            setCreatedId(res.worry.id)
+            setCanFocus(false)
+            // Only offer Focus when there's room; never hold up the save for this
+            apiListFocusWorries()
+                .then((f) => setCanFocus(f.worries.length < f.max))
+                .catch(() => setCanFocus(false))
             rememberCategory(values.categoryId)
             setMatches([])
             setPending(null)
@@ -144,7 +154,28 @@ export default function WorryNew() {
                         </Badge>
                         <Title as="h2">{CONTENT_CONFIG.quickAdd.savedTitle}</Title>
                         <p>{CONTENT_CONFIG.quickAdd.savedBody}</p>
-                        <Button block variant="solid" onClick={() => navigate('/')}>
+                        {canFocus && (
+                            <Button
+                                block
+                                icon={<LuTarget aria-hidden="true" />}
+                                loading={focusBusy}
+                                variant="solid"
+                                onClick={async () => {
+                                    setFocusBusy(true)
+                                    try {
+                                        await apiSetWorryFocus(createdId, true)
+                                    } catch {
+                                        // Full or offline: it stays Parked, which is fine
+                                    } finally {
+                                        setFocusBusy(false)
+                                        navigate('/')
+                                    }
+                                }}
+                            >
+                                Focus on this now
+                            </Button>
+                        )}
+                        <Button block variant={canFocus ? 'default' : 'solid'} onClick={() => navigate('/')}>
                             Back to my list
                         </Button>
                         <Button

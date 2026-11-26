@@ -19,6 +19,18 @@ export const CONTENT_CONFIG = {
         emptyFiltered: 'No entries match these filters.',
     },
 
+    /** Focus + Parked: only a few worries in front of you at once. */
+    focus: {
+        title: 'Focus',
+        intro: 'Up to 3 at a time. Everything else waits in Parked.',
+        emptySlot: 'Pick a worry to focus on',
+        firstTime: 'Pick up to 3 to focus on. The rest can wait.',
+        parkedTitle: 'Parked for later',
+        parkedNote: "Parked doesn't mean forgotten. It's written down, so you don't have to hold it right now.",
+        full: 'Focus is full. Finish or park one first.',
+        slotOpened: 'Its focus spot is open. Pick your next one from Parked, or leave it open.',
+    },
+
     quickAdd: {
         title: "What's on your mind?",
         savedTitle: 'Written down.',

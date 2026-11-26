@@ -61,6 +61,12 @@ yarn workspace steady-express import:worries <email> [file] [--dry-run]   # add 
   open per worry; `POST/PATCH/DELETE /api/worries/:id/action-items[/:itemId]` save one at a time
   (no form Save) and return the worry. Checking one off shows Undo for 6s. Quick add takes only
   `firstActionItem`. The old single `nextStep` is legacy: `migrateNextSteps()` moves it at boot.
+- **Focus + Parked**: at most `WORRY_LIMITS.focusMax` (3) open worries have `focus: true`; the
+  rest are Parked. Capture is never blocked: new worries are Parked, and quick add offers "Focus on
+  this now" only when a spot is open. `GET /api/worries/focus`, `PATCH /api/worries/:id/focus`
+  (409 when full); the main list loads Parked with `focus=no`. Resolving clears focus (reopening
+  stays Parked). The Parked section starts collapsed on every visit (on purpose: the page opens
+  calm) and opens when a filter is used.
 - **Bright Spots** (things going okay, the counterweight to worries): `/api/bright-spots`, text
   encrypted, in the user's drag-and-drop order (`sortOrder`, `PATCH /reorder`; new ones on top). The fixed panel (`components/brightSpots/`) shows on `/` and
   `/worries/*` only: right side on desktop (open by default, AppShell reserves its width), pill +

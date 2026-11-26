@@ -9,6 +9,7 @@ import {
     actionItemSchemas,
     validateStrict,
     validationMessage,
+    worryFocusSchema,
     worryListQuerySchema,
     worrySchemas,
     worrySimilarSchema,
@@ -24,6 +25,8 @@ import type {
     WorryCreateInput,
     WorryDto,
     WorryDuplicateGroupDto,
+    WorryFocusInput,
+    WorryFocusResponse,
     WorryMatchDto,
     WorrySimilarInput,
     WorryListQuery,
@@ -47,6 +50,7 @@ export function toWorryDto(doc: any): WorryDto {
         intensity: Number(doc.intensity ?? 1),
         control: doc.control ?? 'partly',
         status: doc.status ?? 'active',
+        focus: Boolean(doc.focus) && doc.status !== 'resolved',
         actionItems: toActionItemDtos(doc.actionItems),
         reframe: decryptField(doc.reframe),
         notes: decryptField(doc.notes),
@@ -93,6 +97,8 @@ export async function listWorries(req: Request, res: Response) {
         if (statuses.length) filter.status = { $in: statuses }
     }
     if (value.control) filter.control = value.control
+    if (value.focus === 'yes') filter.focus = true
+    if (value.focus === 'no') filter.focus = { $ne: true }
 
     const sort: Record<string, 1 | -1> =
         value.sort === 'oldest' ? { createdAt: 1 } : value.sort === 'intensity' ? { intensity: -1, createdAt: -1 } : { createdAt: -1 }
@@ -192,6 +198,11 @@ export async function updateWorry(req: Request, res: Response) {
     }
     if (value.status && value.status !== doc.status) {
         doc.resolvedAt = value.status === 'resolved' ? new Date() : null
+        // A resolved worry leaves Focus, opening the slot. Reopening it keeps it Parked.
+        if (value.status === 'resolved') {
+            doc.focus = false
+            doc.focusedAt = null
+        }
     }
     doc.set(encryptBody(value))
     await doc.save()
@@ -210,6 +221,54 @@ export async function deleteWorry(req: Request, res: Response) {
         return
     }
     res.json({ ok: true })
+}
+
+// ── Focus ─────────────────────────────────────────────────────────────────────
+// At most WORRY_LIMITS.focusMax open worries in Focus per user; everything else is Parked.
+
+const FOCUS_FULL = `Focus is full. Finish or park one first.`
+const openFocusFilter = (userId: string) => ({ userId, focus: true, status: { $ne: 'resolved' } })
+
+// GET /api/worries/focus
+export async function listFocusWorries(req: Request, res: Response) {
+    const docs = await Worry.find(openFocusFilter(req.userId!)).sort({ focusedAt: 1 }).limit(WORRY_LIMITS.focusMax).lean()
+    const body: WorryFocusResponse = { worries: docs.map(toWorryDto), max: WORRY_LIMITS.focusMax }
+    res.json(body)
+}
+
+// PATCH /api/worries/:id/focus  { focus }
+export async function setWorryFocus(req: Request, res: Response) {
+    const userId = req.userId!
+    const { value, error } = validateStrict<WorryFocusInput>(req.body, worryFocusSchema)
+    if (error) {
+        res.status(400).json({ error: validationMessage(error) })
+        return
+    }
+    if (!isObjectId(req.params.id)) {
+        res.status(404).json({ error: NOT_FOUND })
+        return
+    }
+    const doc = await Worry.findOne({ _id: req.params.id, userId })
+    if (!doc) {
+        res.status(404).json({ error: NOT_FOUND })
+        return
+    }
+    if (value.focus && !doc.focus) {
+        if (doc.status === 'resolved') {
+            res.status(409).json({ error: 'Resolved worries stay off the focus list. Reopen it first.' })
+            return
+        }
+        if ((await Worry.countDocuments(openFocusFilter(userId))) >= WORRY_LIMITS.focusMax) {
+            res.status(409).json({ error: FOCUS_FULL })
+            return
+        }
+    }
+    if (Boolean(doc.focus) !== value.focus) {
+        doc.focus = value.focus
+        doc.focusedAt = value.focus ? new Date() : null
+        await doc.save()
+    }
+    res.json({ worry: toWorryDto(doc) })
 }
 
 // ── Action items ──────────────────────────────────────────────────────────────
